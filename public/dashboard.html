@@ -4,67 +4,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RepoJudge - Code Analysis Dashboard</title>
+    <title>RepoJudge Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
-<body>
+<body class="dashboard-page">
+    <div class="bg-grid"></div>
+    <div class="bg-glow-container">
+        <div class="glow-blob glow-1"></div>
+        <div class="glow-blob glow-2"></div>
+        <div class="glow-blob glow-3"></div>
+        <div class="glow-blob glow-4"></div>
+    </div>
+
     <div class="dashboard">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">
+                <a href="/" class="logo">
                     <i class='bx bx-code-block'></i>
                     <span>RepoJudge</span>
-                </div>
+                </a>
             </div>
 
-            <button class="new-analysis-btn" id="newAnalysisBtn">
-                <i class='bx bx-plus'></i>
-                <span data-i18n="newAnalysis">New Analysis</span>
+            <button id="newAnalysisBtn" class="new-analysis-btn">
+                <i class='bx bx-plus'></i> <span data-i18n="newAnalysis">New Analysis</span>
             </button>
 
+            <!-- History -->
             <div class="history-section">
                 <h4 data-i18n="history">Analysis History</h4>
-                <div class="history-list" id="historyList">
-                    <!-- Populated by JS -->
-                </div>
-            </div>
-
-            <!-- User Repos Section (shown when logged in) -->
-            <div class="repos-section hidden" id="reposSection">
-                <h4>Your Repos</h4>
-                <div class="repos-list" id="reposList">
-                    <!-- Populated by JS -->
-                </div>
-            </div>
-
-            <div class="sidebar-stats" id="sidebarStats">
-                <!-- Quick stats shown when analysis is active -->
-            </div>
-
-            <div class="sidebar-footer">
-                <!-- User section -->
-                <div class="user-section" id="userSection">
-                    <a href="/auth/github" class="github-login-btn" id="loginBtn">
-                        <i class='bx bxl-github'></i>
-                        <span>Login with GitHub</span>
-                    </a>
-                    <div class="user-info hidden" id="userInfo">
-                        <img src="" alt="avatar" class="user-avatar" id="userAvatar">
-                        <span class="user-name" id="userName"></span>
-                        <a href="/auth/logout" class="logout-btn" title="Logout">
-                            <i class='bx bx-log-out'></i>
-                        </a>
+                <div id="historyList" class="history-list">
+                    <!-- History items will be populated here -->
+                    <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;"
+                        data-i18n="noHistory">
+                        No analysis history yet
                     </div>
                 </div>
+            </div>
+
+            <!-- Stats -->
+            <div id="sidebarStats" class="sidebar-stats">
+                <!-- Stats populated by JS -->
+            </div>
+
+            <!-- User Repos -->
+            <div id="reposSection" class="repos-section hidden">
+                <h4 data-i18n="yourRepos">Your Repos</h4>
+                <div id="reposList" class="repos-list">
+                    <!-- populated by JS -->
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div id="userSection" class="user-section">
+                    <!-- User info or Login button -->
+                </div>
+
                 <div class="language-toggle">
                     <button class="lang-btn active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="tr">TR</button>
@@ -74,161 +77,174 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Welcome Screen (shown when no analysis) -->
-            <div class="welcome-screen" id="welcomeScreen">
+            <!-- Welcome Screen -->
+            <div id="welcomeScreen" class="welcome-screen">
                 <div class="welcome-content">
-                    <h1><span class="gradient-text" data-i18n="title">Analyze Your Code</span></h1>
+                    <div class="badge">
+                        <i class='bx bx-bug'></i>
+                        AI-Powered Static Code Analysis
+                    </div>
+                    <h1 data-i18n="title">Analyze Your Code</h1>
                     <p data-i18n="subtitle">Paste a GitHub repository URL to get started</p>
 
                     <div class="input-box">
                         <i class='bx bxl-github'></i>
-                        <input type="text" id="repoUrl" placeholder="https://github.com/username/repository">
+                        <input type="text" id="repoUrl" placeholder="https://github.com/username/repository"
+                            data-i18n-placeholder="repoPlaceholder">
                         <button id="analyzeBtn" class="analyze-btn">
-                            <i class='bx bx-search-alt'></i>
                             <span data-i18n="analyze">Analyze</span>
+                            <i class='bx bx-right-arrow-alt'></i>
                         </button>
                     </div>
                 </div>
             </div>
 
             <!-- Loading Screen -->
-            <div class="loading-screen hidden" id="loadingScreen">
+            <div id="loadingScreen" class="loading-screen hidden">
                 <div class="loader">
                     <div class="spinner"></div>
-                    <p id="loadingText">Analyzing repository...</p>
+                    <p data-i18n="loading">Analyzing repository...</p>
                 </div>
             </div>
 
             <!-- Analysis View -->
-            <div class="analysis-view hidden" id="analysisView">
-                <!-- Top Bar -->
+            <div id="analysisView" class="analysis-view hidden">
                 <div class="analysis-header">
                     <div class="repo-info">
-                        <i class='bx bxl-github'></i>
+                        <i class='bx bx-git-repo-forked'></i>
                         <span id="repoName">owner/repo</span>
                     </div>
+
                     <div class="analysis-tabs">
                         <button class="tab active" data-tab="overview" data-i18n="overview">Overview</button>
-                        <button class="tab" data-tab="errors" data-i18n="errors">Errors</button>
+                        <button class="tab" data-tab="issues" data-i18n="issues">Issues</button>
                         <button class="tab" data-tab="security" data-i18n="security">Security</button>
+                        <button class="tab" data-tab="chat">Chat 💬</button>
                         <button class="tab" data-tab="readme" data-i18n="readme">README</button>
                     </div>
+
+                    <button class="badge-btn" id="getBadgeBtn">
+                        <i class='bx bx-medal'></i> <span data-i18n="getBadge">Get Badge</span>
+                    </button>
                 </div>
 
-                <!-- Tab Contents -->
                 <div class="tab-panels">
-                    <!-- Overview Tab -->
-                    <div class="tab-panel active" id="overview-panel">
-                        <!-- Metrics Row -->
+                    <!-- Overview Panel -->
+                    <div id="overview-panel" class="tab-panel active">
                         <div class="metrics-row">
                             <div class="metric-card health">
                                 <div class="metric-icon"><i class='bx bx-heart'></i></div>
                                 <div class="metric-info">
-                                    <span class="metric-value" id="healthScore">?</span>
+                                    <span class="metric-value" id="healthScore">--</span>
                                     <span class="metric-label" data-i18n="healthScore">Health Score</span>
                                 </div>
-                                <div class="metric-ring" id="healthRing"></div>
                             </div>
                             <div class="metric-card issues-count">
-                                <div class="metric-icon"><i class='bx bx-bug'></i></div>
+                                <div class="metric-icon"><i class='bx bx-error-circle'></i></div>
                                 <div class="metric-info">
-                                    <span class="metric-value" id="totalIssues">0</span>
+                                    <span class="metric-value" id="totalIssues">--</span>
                                     <span class="metric-label" data-i18n="totalIssues">Total Issues</span>
                                 </div>
                             </div>
                             <div class="metric-card critical-count">
-                                <div class="metric-icon"><i class='bx bx-error-circle'></i></div>
+                                <div class="metric-icon"><i class='bx bx-x-circle'></i></div>
                                 <div class="metric-info">
-                                    <span class="metric-value" id="criticalCount">0</span>
+                                    <span class="metric-value" id="criticalCount">--</span>
                                     <span class="metric-label" data-i18n="critical">Critical</span>
                                 </div>
                             </div>
                             <div class="metric-card security-count">
-                                <div class="metric-icon"><i class='bx bx-shield-x'></i></div>
+                                <div class="metric-icon"><i class='bx bx-shield-quarter'></i></div>
                                 <div class="metric-info">
-                                    <span class="metric-value" id="securityCount">0</span>
+                                    <span class="metric-value" id="securityCount">--</span>
                                     <span class="metric-label" data-i18n="securityIssues">Security</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Summary Section -->
                         <div class="summary-section">
-                            <h3><i class='bx bx-file-find'></i> <span data-i18n="summary">Summary</span></h3>
-                            <p id="summaryText">Loading...</p>
+                            <h3 data-i18n="summary"><i class='bx bx-layer'></i> Summary</h3>
+                            <p id="summaryText">Analysis summary will appear here...</p>
                         </div>
 
-                        <!-- Issues Section -->
+                        <div class="grid-2-col">
+                            <div class="issues-section">
+                                <div class="section-header">
+                                    <h3 data-i18n="strengths"><i class='bx bx-star'></i> Strengths</h3>
+                                </div>
+                                <ul id="strengthsList" class="custom-list"></ul>
+                            </div>
+                            <div class="issues-section">
+                                <div class="section-header">
+                                    <h3 data-i18n="competitors"><i class='bx bx-target-lock'></i> Competitors</h3>
+                                </div>
+                                <ul id="competitorsList" class="custom-list"></ul>
+                            </div>
+                        </div>
+
                         <div class="issues-section">
                             <div class="section-header">
-                                <h3><i class='bx bx-list-check'></i> <span data-i18n="issues">Issues</span></h3>
-                                <div class="issue-filters">
-                                    <button class="filter-btn active" data-filter="all" data-i18n="all">All</button>
-                                    <button class="filter-btn" data-filter="critical">Critical</button>
-                                    <button class="filter-btn" data-filter="high">High</button>
-                                    <button class="filter-btn" data-filter="medium">Medium</button>
+                                <h3 data-i18n="errors"><i class='bx bx-error'></i> Errors & Critical Issues</h3>
+                            </div>
+                            <div id="errorsList" class="issues-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Issues Panel -->
+                    <div id="issues-panel" class="tab-panel">
+                        <div class="section-header">
+                            <h3 data-i18n="all"><i class='bx bx-list-ul'></i> All Issues</h3>
+                            <div class="issue-filters">
+                                <button class="filter-btn active" data-filter="all" data-i18n="all">All</button>
+                                <button class="filter-btn" data-filter="critical">Critical</button>
+                                <button class="filter-btn" data-filter="high">High</button>
+                                <button class="filter-btn" data-filter="medium">Medium</button>
+                                <button class="filter-btn" data-filter="low">Low</button>
+                            </div>
+                        </div>
+                        <div id="issuesList" class="issues-grid"></div>
+                    </div>
+
+                    <!-- Security Panel -->
+                    <div id="security-panel" class="tab-panel">
+                        <div class="section-header">
+                            <h3 data-i18n="security"><i class='bx bx-shield'></i> Security Vulnerabilities</h3>
+                        </div>
+                        <div id="securityList" class="issues-grid"></div>
+                    </div>
+
+                    <!-- Chat Panel (NEW) -->
+                    <div id="chat-panel" class="tab-panel">
+                        <div class="chat-container">
+                            <div class="chat-messages" id="chatMessages">
+                                <div class="message system">
+                                    <div class="message-content">
+                                        Hello! I've analyzed this repository. Ask me anything about the code structure,
+                                        bugs, or how to improve it.
+                                    </div>
                                 </div>
                             </div>
-                            <div class="issues-grid" id="issuesList"></div>
-                        </div>
-
-                        <!-- Bottom Grid -->
-                        <div class="bottom-grid">
-                            <div class="info-card strengths">
-                                <h3><i class='bx bx-check-shield'></i> <span data-i18n="strengths">Strengths</span></h3>
-                                <ul id="strengthsList"></ul>
-                            </div>
-                            <div class="info-card competitors">
-                                <h3><i class='bx bx-target-lock'></i> <span data-i18n="competitors">Competitors</span>
-                                </h3>
-                                <ul id="competitorsList"></ul>
+                            <div class="chat-input-area">
+                                <input type="text" id="chatInput" placeholder="Ask about the code...">
+                                <button id="sendChatBtn"><i class='bx bx-send'></i></button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Errors Tab -->
-                    <div class="tab-panel" id="errors-panel">
-                        <div class="tab-header">
-                            <h2><i class='bx bx-error-circle'></i> Critical Errors</h2>
-                        </div>
-                        <div class="filtered-issues" id="errorsList"></div>
-                    </div>
-
-                    <!-- Security Tab -->
-                    <div class="tab-panel" id="security-panel">
-                        <div class="tab-header">
-                            <h2><i class='bx bx-shield-x'></i> Security Issues</h2>
-                        </div>
-                        <div class="filtered-issues" id="securityList"></div>
-                    </div>
-
-                    <!-- README Tab -->
-                    <div class="tab-panel" id="readme-panel">
-                        <div class="readme-toolbar">
-                            <div class="readme-view-toggle">
-                                <button class="view-btn active" data-view="preview">
-                                    <i class='bx bx-show'></i> Preview
-                                </button>
-                                <button class="view-btn" data-view="source">
-                                    <i class='bx bx-code-alt'></i> Source
-                                </button>
-                            </div>
-                            <div class="readme-actions">
-                                <button class="action-btn" id="copyReadme">
-                                    <i class='bx bx-copy'></i> <span data-i18n="copy">Copy</span>
-                                </button>
-                                <button class="action-btn" id="downloadReadme">
-                                    <i class='bx bx-download'></i> <span data-i18n="download">Download</span>
-                                </button>
+                    <!-- README Panel -->
+                    <div id="readme-panel" class="tab-panel">
+                        <div class="section-header">
+                            <h3 data-i18n="readme"><i class='bx bx-file'></i> Generated README</h3>
+                            <div class="action-buttons">
+                                <button class="icon-btn" id="copyReadmeBtn" title="Copy"><i
+                                        class='bx bx-copy'></i></button>
+                                <button class="icon-btn" id="downloadReadmeBtn" title="Download"><i
+                                        class='bx bx-download'></i></button>
                             </div>
                         </div>
                         <div class="readme-container">
-                            <div class="readme-github-header">
-                                <i class='bx bxl-github'></i>
-                                <span>README.md</span>
-                            </div>
-                            <div class="readme-preview active" id="readmePreview"></div>
-                            <div class="readme-source" id="readmeSource"></div>
+                            <div id="readmePreview" class="markdown-body"></div>
+                            <pre id="readmeSource" class="hidden"></pre>
                         </div>
                     </div>
                 </div>
@@ -236,6 +252,30 @@
         </main>
     </div>
 
+    <!-- Badge Modal (NEW) -->
+    <div id="badgeModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Get Your Repository Badge 🏅</h3>
+                <button class="close-modal"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Add this badge to your GitHub README.md to show off your code quality score!</p>
+
+                <div class="badge-preview">
+                    <img id="badgeImage" src="" alt="RepoJudge Score">
+                </div>
+
+                <div class="code-box">
+                    <span class="code-label">Markdown</span>
+                    <code id="badgeCode"></code>
+                    <button class="copy-code-btn"><i class='bx bx-copy'></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 

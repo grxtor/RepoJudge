@@ -112,6 +112,40 @@ app.post('/api/analyze', async (req, res) => {
     }
 });
 
+app.post('/api/chat', async (req, res) => {
+    const { repoUrl, history, message, language } = req.body;
+    const authToken = getAuthToken(req);
+
+    if (!repoUrl || !message) return res.status(400).json({ error: 'Missing repository URL or message' });
+
+    try {
+        const { getRepoStructure, getFileContents } = require('./src/services/github');
+        const { chatWithRepo } = require('./src/services/gemini');
+
+        let owner, repo;
+        if (repoUrl.includes('github.com')) {
+            const parts = repoUrl.split('github.com/')[1].split('/');
+            owner = parts[0];
+            repo = parts[1]?.replace('.git', '');
+        } else {
+            const parts = repoUrl.split('/');
+            owner = parts[0];
+            repo = parts[1];
+        }
+
+        // Ideally we should cache this to avoid re-fetching on every message
+        const fileStructure = await getRepoStructure(owner, repo, authToken);
+        const fileContents = await getFileContents(owner, repo, fileStructure, authToken);
+
+        const response = await chatWithRepo(repo, fileStructure, fileContents, history || [], message, language || 'en');
+
+        res.json({ success: true, response });
+    } catch (error) {
+        console.error('Error in /api/chat:', error.message);
+        res.status(500).json({ error: 'Failed to chat with repository' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

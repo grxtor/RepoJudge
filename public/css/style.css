@@ -1,4 +1,5 @@
 :root {
+    /* Restoring Original Dark Tone */
     --bg-dark: #030305;
     --bg-sidebar: rgba(10, 10, 15, 0.7);
     --bg-card: rgba(255, 255, 255, 0.02);
@@ -24,6 +25,9 @@
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     --glass-border: 1px solid rgba(255, 255, 255, 0.06);
     --card-radius: 16px;
+
+    /* Animation Variables */
+    --glow-primary: rgba(129, 140, 248, 0.4);
 }
 
 * {
@@ -37,7 +41,110 @@ body {
     color: var(--text-primary);
     font-family: var(--font-main);
     min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Animated Background (Restored) */
+.bg-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bg-glow-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
     overflow: hidden;
+    pointer-events: none;
+    filter: blur(80px);
+}
+
+.glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    width: 600px;
+    height: 600px;
+    opacity: 0.6;
+    mix-blend-mode: screen;
+    animation: move 15s infinite alternate;
+}
+
+/* Dashboard Specific Background Overrides */
+.dashboard-page .glow-blob {
+    opacity: 0.25;
+    /* Slightly visible but suppressed */
+    filter: blur(80px) saturate(0.7);
+    /* Softened and slightly desaturated */
+}
+
+/* Make grid slightly less visible too on dashboard */
+.dashboard-page .bg-grid {
+    opacity: 0.5;
+}
+
+.glow-1 {
+    top: -100px;
+    left: -100px;
+    background: radial-gradient(circle, rgba(129, 140, 248, 0.8) 0%, rgba(129, 140, 248, 0) 70%);
+    animation-duration: 20s;
+}
+
+.glow-2 {
+    bottom: -100px;
+    right: -100px;
+    background: radial-gradient(circle, rgba(192, 132, 252, 0.8) 0%, rgba(192, 132, 252, 0) 70%);
+    animation-duration: 25s;
+    animation-delay: -5s;
+}
+
+.glow-3 {
+    top: 30%;
+    left: 20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(244, 114, 182, 0.8) 0%, rgba(244, 114, 182, 0) 70%);
+    animation-duration: 18s;
+    animation-delay: -10s;
+}
+
+.glow-4 {
+    bottom: 20%;
+    left: 30%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, rgba(59, 130, 246, 0) 70%);
+    animation-duration: 22s;
+    animation-delay: -7s;
+}
+
+@keyframes move {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+
+    33% {
+        transform: translate(150px, 50px) rotate(90deg) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-50px, 150px) rotate(180deg) scale(0.9);
+    }
+
+    100% {
+        transform: translate(0, 0) rotate(360deg) scale(1);
+    }
 }
 
 /* Dashboard Layout */
@@ -45,6 +152,8 @@ body {
     display: grid;
     grid-template-columns: 280px 1fr;
     height: 100vh;
+    position: relative;
+    z-index: 1;
 }
 
 /* Sidebar */
@@ -70,6 +179,10 @@ body {
     gap: 10px;
     font-size: 1.3rem;
     font-weight: 700;
+    text-decoration: none;
+    /* Changed from just display: flex */
+    color: var(--text-primary);
+    /* Ensure color persists */
 }
 
 .logo i {
@@ -138,7 +251,8 @@ body {
 }
 
 .history-item.active {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(129, 140, 248, 0.15);
+    /* var(--primary) is #818cf8 */
     color: var(--text-primary);
 }
 
@@ -175,6 +289,11 @@ body {
 .repos-section {
     padding: 15px;
     border-top: 1px solid var(--border-color);
+    flex: 1;
+    /* Allow it to grow/shrink if needed, but history-section has flex:1 too. We might want to adjust */
+    overflow-y: auto;
+    max-height: 200px;
+    /* Limit height so it doesn't push footer off */
 }
 
 .repos-section.hidden {
@@ -193,8 +312,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 200px;
-    overflow-y: auto;
 }
 
 .repo-item {
@@ -288,17 +405,6 @@ body {
     white-space: nowrap;
 }
 
-.logout-btn {
-    color: var(--text-muted);
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.logout-btn:hover {
-    color: var(--danger);
-}
-
 .language-toggle {
     display: flex;
     gap: 5px;
@@ -330,7 +436,8 @@ body {
 .main-content {
     height: 100vh;
     overflow-y: auto;
-    background: var(--bg-dark);
+    background: transparent;
+    /* CRITICAL: Transparent to show bg-grid/blobs */
 }
 
 /* Welcome Screen */
@@ -339,33 +446,41 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at center top, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+    /* Removed the radial-gradient that was hiding the blobs */
+    background: transparent;
 }
 
 .welcome-content {
     text-align: center;
-    max-width: 700px;
+    max-width: 900px;
+    /* Increased from 700px */
     padding: 60px 40px;
+    width: 100%;
+}
+
+/* Badge in Welcome Screen */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    border-radius: 50px;
+    font-size: 0.85rem;
+    color: var(--primary);
+    margin-bottom: 30px;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.badge i {
+    font-size: 1rem;
 }
 
 .welcome-content h1 {
     font-size: 3rem;
     margin-bottom: 20px;
     font-weight: 700;
-}
-
-.gradient-text {
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.welcome-content p {
-    color: var(--text-secondary);
-    font-size: 1.2rem;
-    margin-bottom: 40px;
-    line-height: 1.6;
 }
 
 .input-box {
@@ -382,7 +497,7 @@ body {
 
 .input-box:focus-within {
     border-color: var(--primary);
-    box-shadow: 0 4px 30px rgba(99, 102, 241, 0.2);
+    box-shadow: 0 4px 30px rgba(129, 140, 248, 0.2);
 }
 
 .input-box>i {
@@ -543,6 +658,8 @@ body {
 
 .metric-card {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: var(--glass-border);
     border-radius: var(--card-radius);
     padding: 24px;
@@ -634,6 +751,8 @@ body {
 /* Summary Section */
 .summary-section {
     background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
@@ -662,6 +781,8 @@ body {
 /* Issues Section */
 .issues-section {
     background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
@@ -801,21 +922,38 @@ body {
     color: var(--success);
 }
 
-.issue-desc {
-    color: var(--text-secondary);
+/* Badge Button */
+.badge-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+    border: none;
+    border-radius: 20px;
     font-size: 0.9rem;
-    line-height: 1.6;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s;
 }
 
-/* Bottom Grid - Info Cards */
-.bottom-grid {
+.badge-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Bottom Grid for Strengths/Competitors */
+.grid-2-col {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
+    margin-bottom: 25px;
 }
 
 .info-card {
     background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
@@ -837,12 +975,14 @@ body {
     color: var(--accent);
 }
 
-.info-card ul {
+.custom-list {
     list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.info-card li {
-    padding: 12px 0;
+.custom-list li {
+    padding: 10px 0;
     border-bottom: 1px solid var(--border-color);
     color: var(--text-secondary);
     font-size: 0.9rem;
@@ -851,339 +991,295 @@ body {
     gap: 10px;
 }
 
-.info-card li::before {
+.custom-list li::before {
     content: '•';
     color: var(--primary);
     font-weight: bold;
 }
 
-.info-card li:last-child {
+.custom-list li:last-child {
     border-bottom: none;
 }
 
-/* Tab Headers */
-.tab-header {
-    margin-bottom: 20px;
-}
-
-.tab-header h2 {
+/* Chat UI */
+.chat-container {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.3rem;
+    flex-direction: column;
+    height: 100%;
+    min-height: 500px;
 }
 
-.tab-header h2 i {
-    font-size: 1.5rem;
-}
-
-#errors-panel .tab-header h2 i {
-    color: var(--danger);
-}
-
-#security-panel .tab-header h2 i {
-    color: #f97316;
-}
-
-/* Filtered Issues */
-.filtered-issues {
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 15px;
-}
-
-/* README Tab - GitHub Style */
-.readme-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.readme-view-toggle {
-    display: flex;
-    background: var(--bg-card);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    margin-bottom: 20px;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 4px;
 }
 
-.view-btn {
-    padding: 8px 16px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-family: var(--font-main);
-    font-size: 0.85rem;
-    cursor: pointer;
-    border-radius: 6px;
+.message {
     display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
+    margin-bottom: 10px;
 }
 
-.view-btn:hover {
-    color: var(--text-primary);
+.message.user {
+    justify-content: flex-end;
 }
 
-.view-btn.active {
+.message.model {
+    justify-content: flex-start;
+}
+
+.message.system {
+    justify-content: center;
+}
+
+.message-content {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.message.user .message-content {
     background: var(--primary);
     color: white;
+    border-bottom-right-radius: 4px;
 }
 
-.readme-actions {
+.message.model .message-content {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+}
+
+.message.system .message-content {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+}
+
+.chat-input-area {
     display: flex;
     gap: 10px;
 }
 
-.action-btn {
-    padding: 8px 14px;
-    background: var(--bg-card);
+.chat-input-area input {
+    flex: 1;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-family: var(--font-main);
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
+    font-size: 0.95rem;
+    outline: none;
 }
 
-.action-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
+.chat-input-area input:focus {
     border-color: var(--primary);
 }
 
-.readme-container {
-    border: 1px solid #30363d;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #0d1117;
+.chat-input-area button {
+    padding: 0 20px;
+    background: var(--primary);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-.readme-github-header {
-    background: #161b22;
-    padding: 10px 16px;
-    border-bottom: 1px solid #30363d;
+.chat-input-area button:hover {
+    background: var(--secondary);
+}
+
+/* Badge Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #c9d1d9;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s;
 }
 
-.readme-github-header i {
-    font-size: 16px;
-    color: #8b949e;
-}
-
-.readme-preview {
+.modal.hidden {
     display: none;
-    padding: 32px 40px;
-    line-height: 1.7;
-    background: #0d1117;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: #1a1b26;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    padding: 25px;
+    transform: scale(1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal.hidden .modal-content {
+    transform: scale(0.9);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.close-modal {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: var(--text-primary);
+}
+
+.modal-body p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.badge-preview {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.code-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.code-label {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: #1a1b26;
+    /* should match modal bg */
+    padding: 0 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.code-box code {
+    flex: 1;
+    font-family: var(--font-code);
+    font-size: 0.85rem;
+    color: var(--secondary);
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.copy-code-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.copy-code-btn:hover {
+    color: var(--primary);
+}
+
+/* Markdown Styles for README/Chat (Simplified) */
+.markdown-body {
     color: #c9d1d9;
-    font-size: 16px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    background: rgba(13, 17, 23, 0.8);
+    /* Dark opaque background */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
 }
 
-.readme-preview.active {
-    display: block;
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
 }
 
-/* GitHub-style headers */
-.readme-preview h1 {
-    font-size: 2em;
-    font-weight: 600;
-    padding-bottom: 0.3em;
-    border-bottom: 1px solid #30363d;
-    margin-top: 24px;
-    margin-bottom: 16px;
-    color: #c9d1d9;
+.markdown-body p {
+    margin-bottom: 15px;
 }
 
-.readme-preview h1:first-child {
-    margin-top: 0;
-}
-
-.readme-preview h2 {
-    font-size: 1.5em;
-    font-weight: 600;
-    padding-bottom: 0.3em;
-    border-bottom: 1px solid #30363d;
-    margin-top: 24px;
-    margin-bottom: 16px;
-    color: #c9d1d9;
-}
-
-.readme-preview h3 {
-    font-size: 1.25em;
-    font-weight: 600;
-    margin-top: 24px;
-    margin-bottom: 16px;
-    color: #c9d1d9;
-}
-
-.readme-preview h4 {
-    font-size: 1em;
-    font-weight: 600;
-    margin-top: 24px;
-    margin-bottom: 16px;
-    color: #c9d1d9;
-}
-
-.readme-preview p {
-    margin-bottom: 16px;
-    color: #c9d1d9;
-}
-
-.readme-preview ul,
-.readme-preview ol {
-    margin-bottom: 16px;
-    padding-left: 2em;
-}
-
-.readme-preview li {
-    margin: 4px 0;
-    color: #c9d1d9;
-}
-
-.readme-preview li+li {
-    margin-top: 4px;
-}
-
-/* Inline code */
-.readme-preview code {
+.markdown-body code {
     background: rgba(110, 118, 129, 0.4);
     padding: 0.2em 0.4em;
     border-radius: 6px;
-    font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+    font-family: var(--font-code);
     font-size: 85%;
-    color: #c9d1d9;
 }
 
-/* Code blocks */
-.readme-preview pre {
+.markdown-body pre {
     background: #161b22;
     padding: 16px;
     border-radius: 6px;
-    overflow-x: auto;
-    margin: 16px 0;
-    border: 1px solid #30363d;
+    overflow: auto;
+    margin-bottom: 15px;
 }
 
-.readme-preview pre code {
-    background: transparent;
-    color: #c9d1d9;
-    padding: 0;
-    font-size: 85%;
-    line-height: 1.45;
+.markdown-body ul,
+.markdown-body ol {
+    padding-left: 20px;
+    margin-bottom: 15px;
 }
 
-/* Blockquotes */
-.readme-preview blockquote {
-    border-left: 4px solid #3b82f6;
-    padding: 0 16px;
-    margin: 16px 0;
-    color: #8b949e;
-    background: rgba(56, 139, 253, 0.1);
-    border-radius: 0 6px 6px 0;
-    padding-top: 8px;
-    padding-bottom: 8px;
-}
-
-/* Links */
-.readme-preview a {
+.markdown-body a {
     color: #58a6ff;
     text-decoration: none;
 }
 
-.readme-preview a:hover {
+.markdown-body a:hover {
     text-decoration: underline;
-}
-
-/* Images and badges */
-.readme-preview img {
-    max-width: 100%;
-    border-radius: 6px;
-    margin: 8px 0;
-}
-
-.readme-preview img[src*="badge"],
-.readme-preview img[src*="shields.io"] {
-    display: inline-block;
-    margin: 2px 4px 2px 0;
-    border-radius: 4px;
-}
-
-/* Tables */
-.readme-preview table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 16px 0;
-    display: block;
-    overflow-x: auto;
-}
-
-.readme-preview th,
-.readme-preview td {
-    border: 1px solid #30363d;
-    padding: 6px 13px;
-    text-align: left;
-}
-
-.readme-preview th {
-    background: #161b22;
-    font-weight: 600;
-}
-
-.readme-preview tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-/* Horizontal rule */
-.readme-preview hr {
-    height: 0.25em;
-    padding: 0;
-    margin: 24px 0;
-    background-color: #30363d;
-    border: 0;
-    border-radius: 2px;
-}
-
-/* Strong and emphasis */
-.readme-preview strong {
-    font-weight: 600;
-    color: #c9d1d9;
-}
-
-.readme-preview em {
-    font-style: italic;
-}
-
-/* Task lists */
-.readme-preview input[type="checkbox"] {
-    margin-right: 8px;
-}
-
-.readme-source {
-    display: none;
-    padding: 20px;
-    background: #0d1117;
-    font-family: var(--font-code);
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: var(--text-secondary);
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.readme-source.active {
-    display: block;
 }
 
 /* Responsive */
@@ -1206,18 +1302,31 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .bottom-grid {
+    .grid-2-col {
         grid-template-columns: 1fr;
     }
+}
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
 
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
+::-webkit-scrollbar-track {
+    background: transparent;
+}
 
-    .readme-toolbar {
-        flex-direction: column;
-        gap: 10px;
-    }
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* For Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }

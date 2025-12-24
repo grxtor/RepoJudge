@@ -35,7 +35,12 @@ const translations = {
         loginGithub: 'Login with GitHub',
         repoPlaceholder: 'https://github.com/username/repository',
         preview: 'Preview',
-        source: 'Source'
+        preview: 'Preview',
+        source: 'Source',
+        getBadge: 'Get Badge',
+        badgeTitle: 'Get Your Repository Badge',
+        badgeDesc: 'Add this badge to your GitHub README.md to show off your code quality score!',
+        markdown: 'Markdown'
     },
     tr: {
         title: 'Kodunuzu Analiz Edin',
@@ -66,7 +71,11 @@ const translations = {
         loginGithub: 'GitHub ile Giriş',
         repoPlaceholder: 'https://github.com/kullanici/repo',
         preview: 'Önizleme',
-        source: 'Kaynak Kod'
+        source: 'Kaynak Kod',
+        getBadge: 'Rozet Al',
+        badgeTitle: 'Repo Rozetini Al',
+        badgeDesc: 'Kod kalitesi puanınızı göstermek için bu rozeti GitHub README.md dosyanıza ekleyin!',
+        markdown: 'Markdown'
     }
 };
 
@@ -79,6 +88,9 @@ const analyzeBtn = document.getElementById('analyzeBtn');
 const newAnalysisBtn = document.getElementById('newAnalysisBtn');
 const historyList = document.getElementById('historyList');
 const sidebarStats = document.getElementById('sidebarStats');
+const userSection = document.getElementById('userSection');
+const reposSection = document.getElementById('reposSection'); // Should exist if we add repos listing later
+
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -89,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadHistory();
+    checkAuth();
     setupEventListeners();
     updateUI();
     checkAuth();
@@ -218,17 +231,18 @@ function setupEventListeners() {
     });
 
     // README actions
-    document.getElementById('copyReadme').addEventListener('click', () => {
+    // README actions (Updated IDs to match dashboard.html)
+    document.getElementById('copyReadmeBtn')?.addEventListener('click', () => {
         if (currentAnalysis?.readme) {
             navigator.clipboard.writeText(currentAnalysis.readme);
-            const btn = document.getElementById('copyReadme');
+            const btn = document.getElementById('copyReadmeBtn');
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<i class='bx bx-check'></i> ${translations[selectedLang].copied}`;
             setTimeout(() => btn.innerHTML = originalHTML, 2000);
         }
     });
 
-    document.getElementById('downloadReadme').addEventListener('click', () => {
+    document.getElementById('downloadReadmeBtn')?.addEventListener('click', () => {
         if (currentAnalysis?.readme) {
             const blob = new Blob([currentAnalysis.readme], { type: 'text/markdown' });
             const url = URL.createObjectURL(blob);
@@ -237,6 +251,114 @@ function setupEventListeners() {
             a.download = 'README.md';
             a.click();
         }
+    });
+
+    setupChat();
+    setupBadge();
+}
+
+// Chat Logic
+function setupChat() {
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendChatBtn');
+    const messages = document.getElementById('chatMessages');
+    let history = [];
+
+    async function send() {
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        // Add user message
+        addMessage(text, 'user');
+        chatInput.value = '';
+
+        // Show loading state
+        const loadingId = addMessage('...', 'model');
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    repoUrl: currentAnalysis.repoUrl,
+                    message: text,
+                    history: history,
+                    language: selectedLang
+                })
+            });
+            const data = await res.json();
+
+            // Remove loading, add response
+            document.getElementById(loadingId).remove();
+
+            if (data.success) {
+                addMessage(data.response, 'model');
+                history.push({ role: 'user', content: text });
+                history.push({ role: 'model', content: data.response });
+            } else {
+                addMessage('Error: ' + data.error, 'system');
+            }
+        } catch (e) {
+            document.getElementById(loadingId)?.remove();
+            addMessage('Failed to send message.', 'system');
+        }
+    }
+
+    sendBtn?.addEventListener('click', send);
+    chatInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') send();
+    });
+
+    function addMessage(text, role) {
+        const id = 'msg-' + Date.now();
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.id = id;
+
+        // Render markdown for model messages
+        const content = role === 'model' ? (typeof marked !== 'undefined' ? marked.parse(text) : text) : text;
+
+        div.innerHTML = `<div class="message-content">${content}</div>`;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return id;
+    }
+}
+
+// Badge Logic
+function setupBadge() {
+    const modal = document.getElementById('badgeModal');
+    const btn = document.getElementById('getBadgeBtn');
+    const close = modal.querySelector('.close-modal');
+    const badgeImg = document.getElementById('badgeImage');
+    const badgeCode = document.getElementById('badgeCode');
+    const copyBtn = modal.querySelector('.copy-code-btn');
+
+    btn?.addEventListener('click', () => {
+        const score = currentAnalysis?.analysis?.overall_health_score || 0;
+        let color = 'red';
+        if (score >= 90) color = 'blue';
+        else if (score >= 70) color = 'green';
+        else if (score >= 50) color = 'yellow';
+
+        const url = `https://img.shields.io/badge/RepoJudge-${score}-${color}?style=for-the-badge&logo=github`;
+        const code = `![RepoJudge Score](${url})`;
+
+        badgeImg.src = url;
+        badgeCode.textContent = code;
+        modal.classList.remove('hidden');
+    });
+
+    close?.addEventListener('click', () => modal.classList.add('hidden'));
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.add('hidden');
+    });
+
+    copyBtn?.addEventListener('click', () => {
+        navigator.clipboard.writeText(badgeCode.textContent);
+        const icon = copyBtn.querySelector('i');
+        icon.className = 'bx bx-check';
+        setTimeout(() => icon.className = 'bx bx-copy', 2000);
     });
 }
 
@@ -326,6 +448,13 @@ function showAnalysisView() {
     analysisView.classList.remove('hidden');
 }
 
+// Helper for localized text
+function getText(data) {
+    if (!data) return '';
+    if (typeof data === 'string') return data;
+    return data[selectedLang] || data['en'] || '';
+}
+
 // Render Analysis
 function renderAnalysis() {
     const { repoName, readme, analysis } = currentAnalysis;
@@ -347,18 +476,24 @@ function renderAnalysis() {
 
     // Color the health score
     let scoreColor = 'var(--danger)';
-    if (score >= 70) scoreColor = 'var(--success)';
+    if (score >= 90) scoreColor = '#3b82f6'; // Elite (Blue)
+    else if (score >= 70) scoreColor = 'var(--success)';
     else if (score >= 50) scoreColor = 'var(--warning)';
+
     document.getElementById('healthScore').style.color = scoreColor;
 
-    // Summary
-    document.getElementById('summaryText').textContent = analysis.summary || '';
+    // Summary (Localized)
+    document.getElementById('summaryText').textContent = getText(analysis.summary);
 
     // Issues
     renderIssues();
 
-    // Strengths
-    document.getElementById('strengthsList').innerHTML = (analysis.strengths || [])
+    // Strengths (Localized)
+    const strengths = Array.isArray(analysis.strengths)
+        ? analysis.strengths
+        : (analysis.strengths?.[selectedLang] || analysis.strengths?.['en'] || []);
+
+    document.getElementById('strengthsList').innerHTML = strengths
         .map(s => `<li>${s}</li>`).join('');
 
     // Competitors
@@ -418,13 +553,13 @@ function renderIssueCard(issue) {
     return `
         <div class="issue-item ${issue.severity}">
             <div class="issue-header">
-                <span class="issue-title">${issue.issue}</span>
+                <span class="issue-title">${getText(issue.issue)}</span>
                 <div class="issue-meta">
                     <span class="issue-badge">${issue.category || 'general'}</span>
                     <span class="issue-badge severity ${issue.severity}">${issue.severity}</span>
                 </div>
             </div>
-            <p class="issue-desc">${issue.description}</p>
+            <p class="issue-desc">${getText(issue.description)}</p>
         </div>
     `;
 }
@@ -474,4 +609,86 @@ function renderHistory() {
             renderHistory();
         });
     });
+}
+// Auth & User Management
+async function checkAuth() {
+    try {
+        const res = await fetch('/auth/user');
+        const data = await res.json();
+
+        if (data.authenticated) {
+            renderUser(data.user);
+            if (reposSection) {
+                reposSection.classList.remove('hidden');
+                loadUserRepos();
+            }
+        } else {
+            renderLoginButton();
+        }
+    } catch (err) {
+        console.error('Auth check failed:', err);
+        renderLoginButton();
+    }
+}
+
+function renderUser(user) {
+    if (!userSection) return;
+
+    userSection.innerHTML = `
+        <div class="user-info">
+            <img src="${user.avatar}" alt="${user.login}" class="user-avatar">
+            <div class="user-details" style="flex:1; overflow:hidden;">
+                <div class="user-name" title="${user.name || user.login}">${user.name || user.login}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">@${user.login}</div>
+            </div>
+            <a href="/auth/logout" class="logout-btn" title="Logout">
+                <i class='bx bx-log-out'></i>
+            </a>
+        </div>
+    `;
+}
+
+function renderLoginButton() {
+    if (!userSection) return;
+
+    userSection.innerHTML = `
+        <a href="/auth/github" class="github-login-btn">
+            <i class='bx bxl-github'></i>
+            <span>${translations[selectedLang].loginGithub}</span>
+        </a>
+    `;
+}
+
+// Load user's GitHub repositories
+async function loadUserRepos() {
+    try {
+        const res = await fetch('/auth/repos');
+        const data = await res.json();
+        const reposList = document.querySelector('.repos-list');
+
+        if (!reposList) return;
+
+        if (data.repos.length === 0) {
+            reposList.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">No repos found</p>';
+            return;
+        }
+
+        reposList.innerHTML = data.repos.map(repo => `
+            <div class="repo-item" data-url="https://github.com/${repo.full_name}">
+                <i class='bx ${repo.private ? 'bx-lock-alt' : 'bx-git-repo-forked'}'></i>
+                <span>${repo.name}</span>
+                ${repo.private ? '<span class="private-badge">Private</span>' : ''}
+            </div>
+        `).join('');
+
+        // Add click handlers
+        reposList.querySelectorAll('.repo-item').forEach(item => {
+            item.addEventListener('click', () => {
+                repoUrlInput.value = item.dataset.url;
+                startAnalysis();
+            });
+        });
+    } catch (err) {
+        console.error('Failed to load repos:', err);
+    }
 }

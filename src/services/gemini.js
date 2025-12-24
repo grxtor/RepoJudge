@@ -41,32 +41,30 @@ async function generateReadme(repoName, fileStructure, fileContents, language = 
     }
 }
 
-async function analyzeRepo(repoName, fileStructure, fileContents, language = 'en') {
-    const langLine = language === 'tr'
-        ? 'TÜM YANITINI TÜRKÇE YAZ. Her şey Türkçe olmalı.'
-        : 'Respond in English.';
-
+async function analyzeRepo(repoName, fileStructure, fileContents) {
     const prompt = `
-    ${langLine}
-    
     You are an EXPERIENCED SENIOR SOFTWARE ENGINEER doing a CODE REVIEW.
     
     Your job is to provide FAIR, BALANCED, and USEFUL feedback.
     
-    IMPORTANT SCORING GUIDELINES:
-    - A mature, working project with good structure should score 60-80
-    - A well-documented library with clear purpose should score 70-85
-    - Only truly broken or dangerous code should score below 40
-    - Missing tests or docs are NOT critical issues for working libraries
-    - Focus on ACTUAL bugs and security issues, not stylistic preferences
+    IMPORTANT SCORING GUIDELINES (DEDUCTION MODEL):
+    - **START WITH 100 POINTS.**
+    - DEDUCT points ONLY for REAL issues that affect production or maintenance.
+    - **DO NOT DEDUCT** for stylistic choices, missing comments on obvious code, or missing 100% test coverage if it's a hobby/utility project.
     
-    If the project:
-    - Works as intended → +20 points base
-    - Has clear structure → +15 points
-    - Has documentation → +10 points
-    - Has tests → +10 points
-    - Has no critical security issues → +15 points
-    - Is actively maintained → +10 points
+    Scoring Calibration:
+    - **90-100 (Excellent):** Works well, clear purpose, safe. (e.g., Popular tools like Spicetify, React, etc.)
+    - **75-89 (Good):** Solid code, maybe some minor debt or missing docs. Production ready.
+    - **50-74 (Average):** Messy but works. Needs refactoring or better security.
+    - **0-49 (Poor):** Broken, dangerous, or empty.
+
+    DEDUCTIONS:
+    - Critical Security Vuln: -20 points per issue
+    - Major Bug/Crash Risk: -15 points per issue
+    - Spaghetti Code / No Structure: -10 to -20 points
+    - Zero Documentation: -10 points
+    
+    If the project is a popular, working tool, be GENEROUS. Functionality > Perfection.
     
     ---
     
@@ -90,30 +88,30 @@ async function analyzeRepo(repoName, fileStructure, fileContents, language = 'en
     
     ---
     
-    Return a JSON response with:
+    Return a JSON response with MULTI-LANGUAGE SUPPORT (English and Turkish).
     
-    1. "summary": One clear sentence about what this project does and its quality level.
+    Response Format:
     
-    2. "issues": Array of REAL problems (not nitpicks). Each has:
-       - "issue": Clear problem description
-       - "category": "architecture" | "security" | "testing" | "documentation" | "performance" | "maintainability"
-       - "description": Why this matters in practice
-       - "severity": "low" | "medium" | "high" | "critical"
-       - "impact": "developer" | "users" | "system" | "security"
-       - "effort": "easy" | "medium" | "hard"
-       - "production_risk": "none" | "potential" | "high"
+    1. "summary": {
+        "en": "One clear sentence about what this project does and its quality level in English.",
+        "tr": "Bu projenin ne yaptığı ve kalite seviyesi hakkında Türkçe net bir cümle."
+    }
+    
+    2. "issues": Array of REAL problems. Each object must have:
+       - "issue": { "en": "Problem description", "tr": "Sorun tanımı" }
+       - "category": "architecture" | "security" | "testing" | "documentation" | "performance" | "maintainability" (KEEP IN ENGLISH)
+       - "description": { "en": "Why this matters", "tr": "Bunun neden önemli olduğu" }
+       - "severity": "low" | "medium" | "high" | "critical" (KEEP IN ENGLISH)
        - "priority_score": 1-100
     
-    3. "strengths": What the project does WELL. Be generous with working code.
+    3. "strengths": {
+        "en": ["Strength 1 in English", "Strength 2 in English"],
+        "tr": ["Türkçe güçlü yön 1", "Türkçe güçlü yön 2"]
+    }
     
-    4. "competitors": Similar tools in the ecosystem.
+    4. "competitors": Similar tools in the ecosystem (Names are global).
     
     5. "overall_health_score": 0-100 using the balanced scoring above.
-       - 80-100: Excellent, production-ready
-       - 60-79: Good, solid project
-       - 40-59: Needs improvement
-       - 20-39: Significant issues
-       - 0-19: Broken or dangerous
     
     Return ONLY valid JSON. No markdown blocks.
     `;
@@ -136,4 +134,58 @@ async function analyzeRepo(repoName, fileStructure, fileContents, language = 'en
     }
 }
 
-module.exports = { generateReadme, analyzeRepo };
+async function chatWithRepo(repoName, fileStructure, fileContents, chatHistory, userMessage, language = 'en') {
+    const langInstruction = language === 'tr'
+        ? 'Answer in Turkish (Türkçe).'
+        : 'Answer in English.';
+
+    const systemPrompt = `
+    ${langInstruction}
+    
+    You are an expert developer assisting a user with understanding a GitHub repository.
+    
+    Repo: ${repoName}
+    
+    File Structure:
+    ${fileStructure.slice(0, 50).join('\n')}
+    
+    Key File Contents:
+    ${fileContents}
+    
+    Instructions:
+    - Answer the user's question based strictly on the provided code context.
+    - Be concise and technical.
+    - If the answer isn't in the code, say you don't know but can guess based on conventions.
+    - If the user asks for code, provide it in markdown blocks.
+    `;
+
+    try {
+        const chat = model.startChat({
+            history: [
+                {
+                    role: "user",
+                    parts: [{ text: systemPrompt }],
+                },
+                {
+                    role: "model",
+                    parts: [{ text: language === 'tr' ? "Anlaşıldı. Bu depo hakkında ne bilmek istiyorsun?" : "Understood. What would you like to know about this repository?" }],
+                },
+                ...chatHistory.map(msg => ({
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.content }]
+                }))
+            ],
+            generationConfig: {
+                maxOutputTokens: 1000,
+            },
+        });
+
+        const result = await chat.sendMessage(userMessage);
+        return result.response.text();
+    } catch (error) {
+        console.error("Gemini Chat Error:", error);
+        throw new Error("Chat failed.");
+    }
+}
+
+module.exports = { generateReadme, analyzeRepo, chatWithRepo };

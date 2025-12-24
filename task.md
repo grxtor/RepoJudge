@@ -10,8 +10,10 @@
 - [x] **Landing Page:** Modern, animasyonlu ve "Glassmorphism" tasarımlı ana sayfa yapıldı.
 - [x] **README Oluşturucu:** Projeler için otomatik README.md yazan özellik eklendi.
 - [x] **UI/UX:** 3D kart efektleri, scroll animasyonları ve premium karanlık tema (Dark Mode) uygulandı.
+- [x] **Puanlama Sistemi:** Popüler repolar için puanlama algoritması iyileştirildi ve SCORING.md eklendi.
+- [-] **Çoklu Dil:** Tam Türkçe/İngilizce dil desteği (i18n) eklendi. ( tam olarak yapılamadı hala gemini'nin verdiği çıktılar diğer dile çevrilemiyor)
 - [x] **GitHub Hazırlığı:** `repojudge` ismiyle GitHub'a pushlandı, klasör yapısı temizlendi.
-
+- [-] **GitHub Hazırlığı:** Projenin Sayflarının ScreenShot'larını hazırlayıp siteye koy yapabiliysan gif lerde koyabilirsin.
 ---
 
 ## 🚧 Sırada Yapılacaklar (Roadmap)
@@ -29,10 +31,12 @@
 - [ ] **Paketleme:** macOS için `.dmg` veya `.app` dosyası oluşturulacak (Build).
 - [ ] **İkon:** Uygulama için havalı bir macOS ikonu (.icns) ayarlanacak.
 
-### 3. ✨ İleri Seviye Özellikler (Gelecek)
-- [ ] **Çoklu Dil:** İngilizce/Türkçe dil desteğinin tam oturması.
-- [ ] **Export PDF:** Analiz raporunu PDF olarak indirme özelliği.
-- [ ] **Takım Özellikleri:** Raporu başkasıyla paylaşma linki oluşturma.
+### 3. ✨ Yeni Özellikler (Onaylananlar)
+- [ ] **💬 Chat with Code:** Kullanıcının repo hakkında soru sormasını sağlayan chat arayüzü.
+- [ ] **🏅 Badge Sistemi:** README'ye eklenebilir skor rozeti (Markdown).
+- [ ] **🆚 Repo VS Repo:** İki repoyu kıyaslama modu.
+
+### 4. 🌐 Canlıya Alma (Deployment)
 
 ---
 

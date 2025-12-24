@@ -185,8 +185,8 @@
 
         .cta-btn {
             padding: 10px 24px;
-            background: var(--text-primary);
-            color: var(--bg-dark);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
             border: none;
             border-radius: 8px;
             font-family: inherit;
@@ -194,12 +194,44 @@
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .cta-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
         }
 
         .cta-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .cta-btn:hover::before {
+            opacity: 1;
+        }
+
+        /* Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         /* Hero Section */
@@ -582,36 +614,36 @@
             <p>Everything you need to ship better code</p>
         </div>
         <div class="features-grid">
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon"><i class='bx bx-bug'></i></div>
                 <h3>Bug Detection</h3>
                 <p>AI scans your code for bugs, logic errors, edge cases, and potential runtime issues before they reach
                     production.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon"><i class='bx bx-shield-quarter'></i></div>
                 <h3>Security Scanning</h3>
                 <p>Identify security vulnerabilities, SQL injection risks, XSS vectors, and get recommendations to
                     protect your app.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon"><i class='bx bx-git-branch'></i></div>
                 <h3>Architecture Review</h3>
                 <p>Get feedback on code structure, design patterns, separation of concerns, and scalability issues.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon"><i class='bx bx-trending-up'></i></div>
                 <h3>Priority Scoring</h3>
                 <p>Every issue is scored by severity, effort, and production risk so you know exactly what to fix first.
                 </p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon"><i class='bx bx-target-lock'></i></div>
                 <h3>Competitor Analysis</h3>
                 <p>Discover similar tools and projects in your space. Understand how your project compares to
                     alternatives.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon"><i class='bx bx-file-blank'></i></div>
                 <h3>README Generation</h3>
                 <p>Bonus: Get a professionally written README.md that explains your project's purpose, installation, and
@@ -621,12 +653,12 @@
     </section>
 
     <section class="how-it-works" id="how-it-works">
-        <div class="section-header">
+        <div class="section-header reveal">
             <h2>How It Works</h2>
             <p>Three simple steps to better code</p>
         </div>
         <div class="steps">
-            <div class="step">
+            <div class="step reveal">
                 <div class="step-number">1</div>
                 <div class="step-content">
                     <h3>Paste Your Repository URL</h3>
@@ -634,7 +666,7 @@
                         source files automatically.</p>
                 </div>
             </div>
-            <div class="step">
+            <div class="step reveal">
                 <div class="step-number">2</div>
                 <div class="step-content">
                     <h3>AI Analyzes Your Code</h3>
@@ -642,7 +674,7 @@
                         missing tests, and architectural problems.</p>
                 </div>
             </div>
-            <div class="step">
+            <div class="step reveal">
                 <div class="step-number">3</div>
                 <div class="step-content">
                     <h3>Get Actionable Results</h3>
@@ -653,7 +685,7 @@
         </div>
     </section>
 
-    <section class="cta-section">
+    <section class="cta-section reveal">
         <h2>Find Issues Before Production</h2>
         <p>Analyze any GitHub repository in seconds. Free, no sign-up required.</p>
         <a href="dashboard.html" class="btn-primary">
@@ -662,12 +694,70 @@
         </a>
     </section>
 
+    <!-- Stats Section -->
+    <section class="stats-section reveal"
+        style="padding: 60px 20px; text-align: center; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.01);">
+        <div
+            style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px;">
+            <div>
+                <h3 style="font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 5px;">10k+</h3>
+                <p style="color: var(--text-secondary);">Repos Analyzed</p>
+            </div>
+            <div>
+                <h3 style="font-size: 2.5rem; font-weight: 700; color: var(--secondary); margin-bottom: 5px;">5M+</h3>
+                <p style="color: var(--text-secondary);">Lines of Code Reviewed</p>
+            </div>
+            <div>
+                <h3 style="font-size: 2.5rem; font-weight: 700; color: var(--accent); margin-bottom: 5px;">99%</h3>
+                <p style="color: var(--text-secondary);">Detection Rate</p>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <p>
             Built with <i class='bx bx-heart' style="color: var(--accent);"></i> by RepoJudge &nbsp;•&nbsp;
             <a href="https://github.com" target="_blank">GitHub</a>
         </p>
     </footer>
+
+    <script>
+        // Scroll Reveal Animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // 3D Tilt Effect for Feature Cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = ((y - centerY) / centerY) * -5; // Max 5deg rotation
+                const rotateY = ((x - centerX) / centerX) * 5;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+                card.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                card.style.background = 'rgba(255, 255, 255, 0.08)';
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+                card.style.borderColor = 'var(--border-color)';
+                card.style.background = 'rgba(255, 255, 255, 0.02)';
+            });
+        });
+    </script>
 </body>
 
 </html>

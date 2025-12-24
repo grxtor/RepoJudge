@@ -1,5 +1,5 @@
 // State
-let selectedLang = 'en';
+let selectedLang = localStorage.getItem('repojudge_lang') || (navigator.language.startsWith('tr') ? 'tr' : 'en');
 let currentAnalysis = null;
 let analysisHistory = [];
 let currentFilter = 'all';
@@ -30,7 +30,12 @@ const translations = {
         all: 'All',
         copy: 'Copy',
         download: 'Download',
-        copied: 'Copied!'
+        copied: 'Copied!',
+        yourRepos: 'Your Repos',
+        loginGithub: 'Login with GitHub',
+        repoPlaceholder: 'https://github.com/username/repository',
+        preview: 'Preview',
+        source: 'Source'
     },
     tr: {
         title: 'Kodunuzu Analiz Edin',
@@ -42,10 +47,10 @@ const translations = {
         errors: 'Hatalar',
         security: 'Güvenlik',
         readme: 'README',
-        issues: 'Sorunlar',
+        issues: 'Tespitler',
         strengths: 'Güçlü Yönler',
         competitors: 'Rakipler',
-        loading: 'Depo analiz ediliyor...',
+        loading: 'Depo analiz ediliyor (30sn sürebilir)...',
         noHistory: 'Henüz analiz geçmişi yok',
         noIssues: 'Bu kategoride sorun bulunamadı',
         healthScore: 'Sağlık Puanı',
@@ -56,7 +61,12 @@ const translations = {
         all: 'Tümü',
         copy: 'Kopyala',
         download: 'İndir',
-        copied: 'Kopyalandı!'
+        copied: 'Kopyalandı!',
+        yourRepos: 'Repolarınız',
+        loginGithub: 'GitHub ile Giriş',
+        repoPlaceholder: 'https://github.com/kullanici/repo',
+        preview: 'Önizleme',
+        source: 'Kaynak Kod'
     }
 };
 
@@ -72,6 +82,12 @@ const sidebarStats = document.getElementById('sidebarStats');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Set initial active state for language buttons
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.dataset.lang === selectedLang) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+
     loadHistory();
     setupEventListeners();
     updateUI();
@@ -157,6 +173,7 @@ function setupEventListeners() {
             document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             selectedLang = btn.dataset.lang;
+            localStorage.setItem('repojudge_lang', selectedLang);
             updateUI();
         });
     });

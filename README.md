@@ -20,7 +20,7 @@
 Below are some screenshots showcasing the main user interface of RepoJudge.
 
 ### Landing Page
-<img src="./screenshots/landing.png" alt="RepoJudge Landing Page" width="800">
+<img src="./Screenshot/landing.png" alt="RepoJudge Landing Page" width="800">
 
 ### Dashboard
 <img src="./Screenshot/dashboard.png" alt="RepoJudge Dashboard" width="800">

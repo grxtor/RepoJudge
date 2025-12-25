@@ -50,6 +50,9 @@ async function getRepoStructure(owner, repo, authToken = null) {
         if (error.response?.status === 404) {
             throw new Error('Repository not found. Check the URL or login for private repos.');
         }
+        if (error.response?.status === 409) {
+            throw new Error('Repository is empty (no commits). Please add some code first.');
+        }
         throw new Error('Failed to fetch repository structure.');
     }
 }
@@ -63,8 +66,9 @@ async function getRepoStructure(owner, repo, authToken = null) {
  * @returns {Promise<string>} Concatenated file contents
  */
 async function getFileContents(owner, repo, filePaths, authToken = null) {
+    const client = createGithubClient(authToken);
+
     // Limit to fetching a few key files to avoid Token limits and Context window overload
-    // Prioritize: package.json, main entry points, etc.
     const importantFiles = filePaths.filter(path => {
         return path.match(/(package\.json|requirements\.txt|main\.|index\.|app\.|server\.|Gemfile|cargo\.toml)/i) ||
             path.split('/').length < 3; // Top level files
@@ -72,17 +76,14 @@ async function getFileContents(owner, repo, filePaths, authToken = null) {
 
     let context = "";
 
-    const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-
     for (const path of importantFiles) {
         try {
-            const url = `https://raw.githubusercontent.com/${owner}/${repo}/HEAD/${path}`;
-            const response = await axios.get(url, {
-                responseType: 'text',
-                timeout: 10000,
-                headers
-            });
-            context += `\n\n--- FILE: ${path} ---\n${response.data.slice(0, 5000)}`; // Truncate large files
+            // Use GitHub API instead of raw.githubusercontent.com for private repo support
+            const response = await client.get(`/repos/${owner}/${repo}/contents/${path}`);
+
+            // GitHub API returns base64 encoded content
+            const content = Buffer.from(response.data.content, 'base64').toString('utf-8');
+            context += `\n\n--- FILE: ${path} ---\n${content.slice(0, 5000)}`; // Truncate large files
         } catch (error) {
             console.warn(`Could not fetch ${path}:`, error.message);
         }

@@ -4,12 +4,18 @@ const path = require('path');
 const session = require('express-session');
 require('dotenv').config();
 
+const { redisClient, connectRedis, getCache, setCache } = require('./src/services/redis');
+const RedisStore = require('connect-redis').RedisStore;
+
 const { getRepoStructure, getFileContents } = require('./src/services/github');
 const { generateReadme, analyzeRepo } = require('./src/services/gemini');
 const authRoutes = require('./src/routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to Redis
+connectRedis().catch(console.error);
 
 app.use(cors());
 app.use(express.json());
@@ -20,8 +26,9 @@ app.use((req, res, next) => {
     next();
 });
 
-// Session middleware
+// Session middleware with Redis
 app.use(session({
+    store: new RedisStore({ client: redisClient }),
     secret: process.env.SESSION_SECRET || 'fallback-secret',
     resave: false,
     saveUninitialized: false,
@@ -68,6 +75,14 @@ app.post('/api/generate', async (req, res) => {
             return res.status(400).json({ error: 'Invalid repository URL format' });
         }
 
+        // Cache Check
+        const cacheKey = `readme:${owner}:${repo}:${language || 'en'}`;
+        const cachedResult = await getCache(cacheKey);
+        if (cachedResult) {
+            console.log(`[Cache Hit] Serving README for ${owner}/${repo}`);
+            return res.json({ success: true, readme: cachedResult });
+        }
+
         console.log(`Fetching structure for ${owner}/${repo}...`);
         const fileStructure = await getRepoStructure(owner, repo, authToken);
 
@@ -76,6 +91,9 @@ app.post('/api/generate', async (req, res) => {
 
         console.log(`Generating README via Gemini...`);
         const readme = await generateReadme(repo, fileStructure, fileContents, language || 'en');
+
+        // Set Cache (Expire in 1 hour)
+        await setCache(cacheKey, readme, 3600);
 
         res.json({ success: true, readme });
 
@@ -106,10 +124,21 @@ app.post('/api/analyze', async (req, res) => {
             repo = parts[1];
         }
 
+        // Cache Check
+        const cacheKey = `analysis:${owner}:${repo}:${language || 'en'}`;
+        const cachedAnalysis = await getCache(cacheKey);
+        if (cachedAnalysis) {
+            console.log(`[Cache Hit] Serving Analysis for ${owner}/${repo}`);
+            return res.json({ success: true, analysis: cachedAnalysis });
+        }
+
         const fileStructure = await getRepoStructure(owner, repo, authToken);
         const fileContents = await getFileContents(owner, repo, fileStructure, authToken);
 
         const analysis = await analyzeRepo(repo, fileStructure, fileContents, language || 'en');
+
+        // Set Cache
+        await setCache(cacheKey, analysis, 3600);
 
         res.json({ success: true, analysis });
     } catch (error) {

@@ -260,6 +260,71 @@ body {
     color: var(--text-muted);
 }
 
+/* History Item Context Menu */
+.history-item {
+    position: relative;
+}
+
+.history-item .menu-trigger {
+    opacity: 0;
+    margin-left: auto;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.history-item:hover .menu-trigger {
+    opacity: 1;
+}
+
+.history-item .menu-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-dropdown {
+    position: absolute;
+    right: 10px;
+    top: 100%;
+    background: rgba(30, 35, 45, 0.95);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 0;
+    min-width: 160px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    display: none;
+}
+
+.menu-dropdown.active {
+    display: block;
+}
+
+.menu-dropdown .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.menu-dropdown .menu-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.menu-dropdown .menu-item.danger {
+    color: var(--danger);
+}
+
+.menu-dropdown .menu-item.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
 .sidebar-stats {
     padding: 15px;
     border-top: 1px solid var(--border-color);
@@ -503,6 +568,8 @@ body {
     gap: 12px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-top: 30px;
+    /* Added spacing from subtitle */
 }
 
 .input-box:focus-within {
@@ -878,6 +945,39 @@ body {
 
 .issue-item.low {
     border-left-color: var(--success);
+}
+
+/* Issue Actions */
+.issue-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fix-prompt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    border-radius: 6px;
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fix-prompt-btn:hover {
+    background: rgba(129, 140, 248, 0.2);
+    border-color: var(--primary);
+}
+
+.fix-prompt-btn.copied {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: var(--success);
+    color: var(--success);
 }
 
 .issue-header {

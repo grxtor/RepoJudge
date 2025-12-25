@@ -547,21 +547,64 @@ function renderIssues() {
     document.getElementById('issuesList').innerHTML = filtered.length
         ? filtered.map(renderIssueCard).join('')
         : `<p style="color: var(--text-muted); padding: 20px;">${translations[selectedLang].noIssues}</p>`;
+
+    // Setup fix prompt button handlers
+    setupFixPromptButtons();
 }
 
-function renderIssueCard(issue) {
+function renderIssueCard(issue, index) {
+    const issueText = getText(issue.issue);
+    const descText = getText(issue.description);
+
     return `
         <div class="issue-item ${issue.severity}">
             <div class="issue-header">
-                <span class="issue-title">${getText(issue.issue)}</span>
+                <span class="issue-title">${issueText}</span>
                 <div class="issue-meta">
                     <span class="issue-badge">${issue.category || 'general'}</span>
                     <span class="issue-badge severity ${issue.severity}">${issue.severity}</span>
                 </div>
             </div>
-            <p class="issue-desc">${getText(issue.description)}</p>
+            <p class="issue-desc">${descText}</p>
+            <div class="issue-actions">
+                <button class="fix-prompt-btn" data-issue="${encodeURIComponent(issueText)}" data-desc="${encodeURIComponent(descText)}" data-category="${issue.category}">
+                    <i class='bx bx-code-alt'></i> Düzeltme Prompt'u Al
+                </button>
+            </div>
         </div>
     `;
+}
+
+// Generate and copy fix prompt
+function setupFixPromptButtons() {
+    document.querySelectorAll('.fix-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const issue = decodeURIComponent(btn.dataset.issue);
+            const desc = decodeURIComponent(btn.dataset.desc);
+            const category = btn.dataset.category;
+            const repoName = currentAnalysis?.repoName || 'my project';
+
+            const prompt = `Projemde (${repoName}) şu sorunu tespit ettim:
+
+**Sorun:** ${issue}
+**Kategori:** ${category}
+**Açıklama:** ${desc}
+
+Bu sorunu nasıl düzeltebilirim? Lütfen adım adım çözüm ve örnek kod ver.`;
+
+            navigator.clipboard.writeText(prompt);
+
+            // Visual feedback
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<i class='bx bx-check'></i> Kopyalandı!`;
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+    });
 }
 
 // History Management
@@ -593,21 +636,72 @@ function renderHistory() {
     }
 
     historyList.innerHTML = analysisHistory.map((a, i) => `
-        <div class="history-item ${currentAnalysis?.url === a.url ? 'active' : ''}" data-index="${i}">
+        <div class="history-item ${currentAnalysis?.url === a.url ? 'active' : ''}" data-index="${i}" data-url="${a.url}">
             <i class='bx bxl-github'></i>
             <span>${a.repoName}</span>
+            <i class='bx bx-dots-vertical-rounded menu-trigger' data-index="${i}"></i>
+            <div class="menu-dropdown" data-index="${i}">
+                <div class="menu-item" data-action="reanalyze"><i class='bx bx-refresh'></i> Yeniden Analiz</div>
+                <div class="menu-item" data-action="github"><i class='bx bx-link-external'></i> GitHub'da Aç</div>
+                <div class="menu-item danger" data-action="delete"><i class='bx bx-trash'></i> Sil</div>
+            </div>
         </div>
     `).join('');
 
-    // Add click handlers
+    // Click on item to view analysis
     historyList.querySelectorAll('.history-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+            // Don't trigger if clicking on menu
+            if (e.target.closest('.menu-trigger') || e.target.closest('.menu-dropdown')) return;
+
             const index = parseInt(item.dataset.index);
             currentAnalysis = analysisHistory[index];
             renderAnalysis();
             showAnalysisView();
             renderHistory();
         });
+    });
+
+    // Menu trigger click
+    historyList.querySelectorAll('.menu-trigger').forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = trigger.dataset.index;
+            const dropdown = historyList.querySelector(`.menu-dropdown[data-index="${index}"]`);
+
+            // Close all other dropdowns
+            historyList.querySelectorAll('.menu-dropdown').forEach(d => d.classList.remove('active'));
+            dropdown.classList.toggle('active');
+        });
+    });
+
+    // Menu item actions
+    historyList.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = item.closest('.menu-dropdown');
+            const index = parseInt(dropdown.dataset.index);
+            const action = item.dataset.action;
+            const entry = analysisHistory[index];
+
+            dropdown.classList.remove('active');
+
+            if (action === 'delete') {
+                analysisHistory.splice(index, 1);
+                localStorage.setItem('analysisHistory', JSON.stringify(analysisHistory));
+                renderHistory();
+            } else if (action === 'reanalyze') {
+                repoUrlInput.value = entry.url;
+                startAnalysis();
+            } else if (action === 'github') {
+                window.open(entry.url, '_blank');
+            }
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        historyList.querySelectorAll('.menu-dropdown').forEach(d => d.classList.remove('active'));
     });
 }
 // Auth & User Management

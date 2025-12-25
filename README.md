@@ -23,7 +23,7 @@ Below are some screenshots showcasing the main user interface of RepoJudge.
 <img src="./screenshots/landing.png" alt="RepoJudge Landing Page" width="800">
 
 ### Dashboard
-<img src="./screenshots/dashboard.png" alt="RepoJudge Dashboard" width="800">
+<img src="./Screenshot/dashboard.png" alt="RepoJudge Dashboard" width="800">
 
 ### Prerequisites
 - Node.js 18+

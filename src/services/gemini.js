@@ -120,6 +120,13 @@ async function analyzeRepo(repoName, fileStructure, fileContents) {
     
     5. "overall_health_score": 0-100 using the balanced scoring above.
     
+    6. "recommendations": Array of improvement suggestions. Each object:
+       - "title": { "en": "Add unit tests", "tr": "Birim testleri ekle" }
+       - "description": { "en": "Why this helps", "tr": "Bunun neden faydalı olduğu" }
+       - "priority": "high" | "medium" | "low"
+       - "category": "testing" | "documentation" | "security" | "ci_cd" | "performance"
+       Include 3-5 actionable recommendations based on what's missing in the project.
+    
     Return ONLY valid JSON. No markdown blocks.
     `;
 

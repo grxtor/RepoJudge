@@ -511,6 +511,13 @@ function renderAnalysis() {
         ? security.map(renderIssueCard).join('')
         : `<p style="color: var(--text-muted)">${translations[selectedLang].noIssues}</p>`;
 
+    // Recommendations
+    const recommendations = analysis.recommendations || [];
+    document.getElementById('recommendationsList').innerHTML = recommendations.length
+        ? recommendations.map(renderRecommendationCard).join('')
+        : `<p style="color: var(--text-muted)">Harika! Şu an için önerimiz yok.</p>`;
+    setupRecommendationPrompts();
+
     // README - clean any code fences the AI might have added
     const cleanReadme = (readme || '')
         .replace(/^```(?:markdown|md)?\n/i, '')
@@ -550,6 +557,63 @@ function renderIssues() {
 
     // Setup fix prompt button handlers
     setupFixPromptButtons();
+}
+
+function renderRecommendationCard(rec) {
+    const title = getText(rec.title);
+    const desc = getText(rec.description);
+    const priorityColors = {
+        high: 'var(--danger)',
+        medium: 'var(--warning)',
+        low: 'var(--success)'
+    };
+    const categoryIcons = {
+        testing: 'bx-test-tube',
+        documentation: 'bx-file',
+        security: 'bx-shield',
+        ci_cd: 'bx-git-branch',
+        performance: 'bx-rocket'
+    };
+
+    return `
+        <div class="recommendation-card">
+            <div class="rec-icon">
+                <i class='bx ${categoryIcons[rec.category] || 'bx-bulb'}'></i>
+            </div>
+            <div class="rec-content">
+                <h4>${title}</h4>
+                <p>${desc}</p>
+                <div class="rec-meta">
+                    <span class="rec-priority" style="color: ${priorityColors[rec.priority]}">${rec.priority}</span>
+                    <button class="rec-prompt-btn" data-title="${encodeURIComponent(title)}" data-desc="${encodeURIComponent(desc)}">
+                        <i class='bx bx-copy'></i> Prompt Al
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Setup recommendation prompt buttons
+function setupRecommendationPrompts() {
+    document.querySelectorAll('.rec-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const title = decodeURIComponent(btn.dataset.title);
+            const desc = decodeURIComponent(btn.dataset.desc);
+            const repoName = currentAnalysis?.repoName || 'my project';
+
+            const prompt = `Projeme (${repoName}) şu özelliği eklemek istiyorum:
+
+**Öneri:** ${title}
+**Açıklama:** ${desc}
+
+Bunu nasıl yapabilirim? Adım adım rehber ve örnek kod ver.`;
+
+            navigator.clipboard.writeText(prompt);
+            btn.innerHTML = `<i class='bx bx-check'></i> Kopyalandı!`;
+            setTimeout(() => btn.innerHTML = `<i class='bx bx-copy'></i> Prompt Al`, 2000);
+        });
+    });
 }
 
 function renderIssueCard(issue, index) {

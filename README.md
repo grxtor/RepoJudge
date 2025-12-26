@@ -33,7 +33,7 @@ Get a comprehensive overview of your repository's health, including a calculated
 Transform your documentation instantly. RepoJudge analyzes your code structure and generates a professional Markdown file ready for GitHub.
 
 <!-- Using a grid layout concept for comparison if possible, or just the image -->
-<img src="public/readme_preview.png" alt="README Generation" width="100%" style="border-radius: 10px; border: 1px solid #30363d;">
+<img src="public/readmd.png" alt="README Generation" width="100%" style="border-radius: 10px; border: 1px solid #30363d;">
 
 <br>
 

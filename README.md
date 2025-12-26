@@ -6,26 +6,45 @@
 ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js)
 ![Gemini AI](https://img.shields.io/badge/Powered%20by-Google%20Gemini-4285F4?style=flat-square&logo=google)
 
-## ✨ Features
+### ✨ Key Features
 
-- **🐛 Bug Detection** - AI scans your code for bugs, logic errors, and edge cases
-- **🛡️ Security Scanning** - Identify vulnerabilities, SQL injection risks, XSS vectors
-- **🏗️ Architecture Review** - Feedback on code structure and design patterns
-- **📊 Priority Scoring** - Every issue scored by severity, effort, and production risk
-- **📝 README Generation** - Auto-generate professional README.md files
-- **🔐 Private Repo Support** - Login with GitHub to analyze your private repositories
+| Feature | Description |
+|---------|-------------|
+| 🧠 **AI Code Analysis** | Deep analysis of your codebase using Google Gemini AI |
+| � **Health Score** | Get a 0-100 score based on code quality, security, and best practices |
+| 🐛 **Issue Detection** | Find bugs, security vulnerabilities, and architectural problems |
+| 📝 **README Generation** | Auto-generate professional README.md files |
+| 💬 **AI Chat** | Ask questions about your codebase with context-aware responses |
+| � **Private Repos** | Analyze private repositories with GitHub OAuth |
+| 🏷️ **Badge Generation** | Create embeddable repo badges for your README |
 
-## 🖼️ Screenshots
+---
 
-Below are some screenshots showcasing the main user interface of RepoJudge.
+## � Product Showcase
 
-### Landing Page
-<img src="./Screenshot/landing.png" alt="RepoJudge Landing Page" width="800">
+### 1. Deep Code Analysis Dashboard
+Get a comprehensive overview of your repository's health, including a calculated score, issue breakdown, and critical insights.
 
-### Dashboard
-<img src="./Screenshot/dashboard.png" alt="RepoJudge Dashboard" width="800">
+<img src="public/analysis_detail_preview.png" alt="Analysis Dashboard" width="100%" style="border-radius: 10px; border: 1px solid #30363d;">
 
-### Prerequisites
+<br>
+
+### 2. Automated README Generation
+Transform your documentation instantly. RepoJudge analyzes your code structure and generates a professional Markdown file ready for GitHub.
+
+<!-- Using a grid layout concept for comparison if possible, or just the image -->
+<img src="public/readme_preview.png" alt="README Generation" width="100%" style="border-radius: 10px; border: 1px solid #30363d;">
+
+<br>
+
+### 3. Interactive Code Chat
+Got questions? Chat with an AI that understands your specific repository context.
+
+<!-- Placeholder for chat screenshot if available, otherwise description remains -->
+> "How can I refactor the auth service?"
+> "What security vulnerabilities exist in api.js?"
+
+---### Prerequisites
 - Node.js 18+
 - GitHub OAuth App (for private repos)
 - Google Gemini API Key

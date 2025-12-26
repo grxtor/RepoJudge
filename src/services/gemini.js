@@ -9,11 +9,15 @@ async function generateReadme(repoName, fileStructure, fileContents, language = 
         ? 'IMPORTANT: Write EVERYTHING in Turkish (Türkçe). All text, descriptions, and section headers must be in Turkish.'
         : 'Write the README in English.';
 
+    // Note: Backticks in the prompt template are escaped to avoid syntax errors
     const prompt = `
     ${langInstruction}
     
-    You are an expert developer tool. Your task is to generate a comprehensive, professional, and visually appealing README.md for a GitHub repository.
-
+    You are an expert Senior Developer and Technical Writer. Your task is to generate a **"Business Ready" Professional README.md** for a GitHub repository.
+    
+    Target Audience: Developers, Hiring Managers, and Open Source Contributors.
+    Tone: Professional, Clear, Enthusiastic, and Structured.
+    
     Project Name: ${repoName}
 
     File Structure (partial):
@@ -22,14 +26,47 @@ async function generateReadme(repoName, fileStructure, fileContents, language = 
     Key File Contents:
     ${fileContents}
 
-    Instructions:
-    1. Analyze the file structure and code to understand the project's purpose, tech stack, and features.
-    2. Write a README.md in Markdown format.
-    3. Include sections: Title, Description, Key Features (bullet points), Tech Stack, Installation (guess based on files), Usage, and "Who is this for?".
-    4. Be enthusiastic but professional.
-    5. Use emojis where appropriate.
+    ---
     
-    Output ONLY the Markdown code.
+    ### STRICT README GENERATION RULES:
+
+    1.  **VISUAL HEADER:**
+        - Start with a centered HTML <div> containing:
+            - A placeholder image for the banner: \`<img src="path/to/banner.png" alt="${repoName} Banner" width="100%">\` (Instruct user to replace this).
+            - The Project Title (H1).
+            - A concise, powerful tagline.
+            - Shields.io badges for: License, Language (Node/Python/etc), and Status.
+    
+    2.  **TABLES REPLACING LISTS:**
+        - **"Key Features"** must be a Markdown Table with columns: Feature | Description.
+        - **"Tech Stack"** must be a Markdown Table with columns: Technology | Purpose.
+        - **"API Endpoints"** (if applicable) must be a Table: Method | Endpoint | Description.
+
+    3.  **PRODUCT SHOWCASE (MANDATORY):**
+        - Create a section called \`## 📸 Product Showcase\` (or equivalent in Turkish).
+        - Include 2-3 visual placeholders for screenshots with descriptions.
+        - Format: \`![Screenshot Description](path/to/screenshot.png) - *Optional caption*\`.
+
+    4.  **DEEP ANALYSIS:**
+        - Don't just guess. Look at the file structure and key code.
+        - Explain *what* the project actually does and *why* it's useful.
+    
+    5.  **STANDARD SECTIONS:**
+        - Overview
+        - Key Features (Table)
+        - Product Showcase (Images)
+        - Tech Stack (Table)
+        - 🚀 Getting Started (Prerequisites, Installation, Usage)
+        - 🤝 Contributing
+        - 📄 License
+        - 👨‍💻 Author
+
+    6.  **FORMATTING:**
+        - Use emojis for section headers (e.g., 🚀, 🛠️, 📄).
+        - Keep descriptions concise.
+        - Use code blocks for installation commands.
+
+    Output ONLY the Markdown code. Do not include "Here is your README" or markdown block markers like \`\`\`markdown.
     `;
 
     try {

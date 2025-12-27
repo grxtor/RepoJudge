@@ -255,7 +255,7 @@ async function checkAuth() {
 
             if (nameEl) nameEl.textContent = hasToken ? 'Token Mode' : 'Guest';
             if (planEl) planEl.textContent = hasToken ? 'Waiting for token' : 'Free Plan';
-            if (settingsEmailEl) settingsEmailEl.textContent = hasToken ? 'token@repojudge.ai' : 'guest@repojudge.ai';
+            if (settingsEmailEl) settingsEmailEl.textContent = hasToken ? 'token@repojudge.yongdohyun.org.tr' : 'guest@repojudge.yongdohyun.org.tr';
 
             if (avatarImg) avatarImg.classList.add('hidden');
             if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
@@ -273,7 +273,7 @@ async function checkAuth() {
 
         if (nameEl) nameEl.textContent = hasToken ? 'Token Mode' : 'Guest';
         if (planEl) planEl.textContent = hasToken ? 'Waiting for token' : 'Free Plan';
-        if (settingsEmailEl) settingsEmailEl.textContent = hasToken ? 'token@repojudge.ai' : 'guest@repojudge.ai';
+        if (settingsEmailEl) settingsEmailEl.textContent = hasToken ? 'token@repojudge.yongdohyun.org.tr' : 'guest@repojudge.yongdohyun.org.tr';
 
         if (avatarImg) avatarImg.classList.add('hidden');
         if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');

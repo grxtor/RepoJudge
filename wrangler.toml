@@ -3,8 +3,8 @@ main = "worker/index.mjs"
 compatibility_date = "2024-10-01"
 
 kv_namespaces = [
-  { binding = "repojudge_sessions", id = "ab2d2ccf4b4e4bcc84c60eac01556357" },
-  { binding = "repojudge_cache", id = "5fb813c713494da2b667f7e363c6fbac" }
+  { binding = "SESSIONS", id = "ab2d2ccf4b4e4bcc84c60eac01556357" },
+  { binding = "CACHE", id = "5fb813c713494da2b667f7e363c6fbac" }
 ]
 
 [observability]

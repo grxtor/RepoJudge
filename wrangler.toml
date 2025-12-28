@@ -1,0 +1,8 @@
+name = "repojudge-backend"
+main = "worker/index.mjs"
+compatibility_date = "2024-10-01"
+
+kv_namespaces = [
+  { binding = "SESSIONS", id = "replace_with_sessions_kv_id" },
+  { binding = "CACHE", id = "replace_with_cache_kv_id" }
+]

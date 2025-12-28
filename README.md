@@ -99,6 +99,33 @@ On first visit the site prompts for these values. If localStorage is available, 
 
 If your backend is on a different origin, set `window.__API_BASE__` before `app.js` loads (for example in `public/index.html` and `public/dashboard.html`, or in `docs/` after build).
 
+### Cloudflare Workers Backend
+
+You can run the backend on Cloudflare Workers and keep the GitHub Pages frontend static.
+
+1. Create KV namespaces:
+   ```bash
+   wrangler kv:namespace create repojudge_sessions
+   wrangler kv:namespace create repojudge_cache
+   ```
+2. Update `wrangler.toml` with the KV IDs for `SESSIONS` and `CACHE`.
+3. Deploy the worker:
+   ```bash
+   wrangler deploy
+   ```
+4. Point the frontend to the worker origin by setting:
+   ```html
+   <script>
+     window.__API_BASE__ = 'https://your-worker.yourdomain.workers.dev';
+   </script>
+   ```
+5. Update your GitHub OAuth App callback URL to:
+   ```
+   https://your-worker.yourdomain.workers.dev/auth/github/callback
+   ```
+
+The frontend still asks for `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GEMINI_API_KEY`, and `SESSION_SECRET` on first visit.
+
 ## 🔧 GitHub OAuth Setup
 
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)

@@ -91,12 +91,13 @@ RepoJudge can run on GitHub Pages as a static frontend that talks to a separatel
    ```
 3. Configure GitHub Pages to serve the `/docs` folder.
 4. Open `dashboard.html` and set:
-   - Backend URL
    - Gemini API key
    - GitHub Client ID / Secret
    - Session secret
 
 On first visit the site prompts for these values. If localStorage is available, they are stored on the client device.
+
+If your backend is on a different origin, set `window.__API_BASE__` before `app.js` loads (for example in `public/index.html` and `public/dashboard.html`, or in `docs/` after build).
 
 ## 🔧 GitHub OAuth Setup
 

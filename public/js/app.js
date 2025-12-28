@@ -18,7 +18,6 @@ let analysisFolders = (() => {
 let currentFilter = 'all';
 
 const STORAGE_KEYS = {
-    apiBase: 'repojudge_api_base',
     geminiKey: 'repojudge_gemini_key',
     githubClientId: 'repojudge_github_client_id',
     githubClientSecret: 'repojudge_github_client_secret',
@@ -67,7 +66,7 @@ function removeStoredValue(key) {
 }
 
 function getApiBase() {
-    return getStoredValue(STORAGE_KEYS.apiBase);
+    return (window.__API_BASE__ || '').trim();
 }
 
 function getGeminiKey() {
@@ -114,9 +113,6 @@ function isGithubPagesHost() {
 }
 
 async function refreshBackendStatus() {
-    const base = getApiBase();
-    if (!base && isGithubPagesHost()) return;
-
     try {
         const res = await fetch(buildApiUrl('/api/status'), {
             headers: buildHeaders(),
@@ -159,12 +155,6 @@ function updateApiSettingsStatus() {
 }
 
 function ensureBackendConfigured() {
-    if (getApiBase()) return true;
-    if (isGithubPagesHost()) {
-        window.openApiSettingsModal?.();
-        alert('Please set the Backend URL in API Settings.');
-        return false;
-    }
     return true;
 }
 
@@ -304,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshBackendStatus();
     updateUI();
 
-    if (isGithubPagesHost() && (!getApiBase() || !getGeminiKey() || !getGithubClientId() || !getGithubClientSecret() || !getSessionSecret())) {
+    if (isGithubPagesHost() && (!getGeminiKey() || !getGithubClientId() || !getGithubClientSecret() || !getSessionSecret())) {
         window.openApiSettingsModal?.();
     }
 
@@ -651,7 +641,6 @@ function setupApiSettingsModal() {
     const modal = document.getElementById('apiSettingsModal');
     const openBtn = document.getElementById('apiSettingsItem');
     const closeBtn = modal?.querySelector('.close-modal');
-    const apiBaseInput = document.getElementById('apiBaseInput');
     const geminiKeyInput = document.getElementById('geminiKeyInput');
     const githubClientIdInput = document.getElementById('githubClientIdInput');
     const githubClientSecretInput = document.getElementById('githubClientSecretInput');
@@ -663,7 +652,6 @@ function setupApiSettingsModal() {
     if (!modal || !openBtn) return;
 
     function openModal() {
-        if (apiBaseInput) apiBaseInput.value = getApiBase();
         if (geminiKeyInput) geminiKeyInput.value = getGeminiKey();
         if (githubClientIdInput) githubClientIdInput.value = getGithubClientId();
         if (githubClientSecretInput) githubClientSecretInput.value = getGithubClientSecret();
@@ -678,14 +666,10 @@ function setupApiSettingsModal() {
     }
 
     function saveSettings() {
-        const apiBase = apiBaseInput?.value.trim() || '';
         const geminiKey = geminiKeyInput?.value.trim() || '';
         const githubClientId = githubClientIdInput?.value.trim() || '';
         const githubClientSecret = githubClientSecretInput?.value.trim() || '';
         const sessionSecret = sessionSecretInput?.value.trim() || '';
-
-        if (apiBase) setStoredValue(STORAGE_KEYS.apiBase, apiBase);
-        else removeStoredValue(STORAGE_KEYS.apiBase);
 
         if (geminiKey) setStoredValue(STORAGE_KEYS.geminiKey, geminiKey);
         else removeStoredValue(STORAGE_KEYS.geminiKey);
@@ -706,13 +690,11 @@ function setupApiSettingsModal() {
     }
 
     function clearSettings() {
-        removeStoredValue(STORAGE_KEYS.apiBase);
         removeStoredValue(STORAGE_KEYS.geminiKey);
         removeStoredValue(STORAGE_KEYS.githubClientId);
         removeStoredValue(STORAGE_KEYS.githubClientSecret);
         removeStoredValue(STORAGE_KEYS.sessionSecret);
 
-        if (apiBaseInput) apiBaseInput.value = '';
         if (geminiKeyInput) geminiKeyInput.value = '';
         if (githubClientIdInput) githubClientIdInput.value = '';
         if (githubClientSecretInput) githubClientSecretInput.value = '';

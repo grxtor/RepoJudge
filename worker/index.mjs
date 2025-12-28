@@ -223,11 +223,21 @@ async function handleAuth(request, env) {
 
         if (!clientId) {
             const fallback = frontendUrl || '/dashboard.html';
-            return new Response(null, {\n+                status: 302,\n+                headers: {\n+                    Location: appendErrorParam(fallback, 'missing_client', url)\n+                }\n+            });
+            return new Response(null, {
+                status: 302,
+                headers: {
+                    Location: appendErrorParam(fallback, 'missing_client', url)
+                }
+            });
         }
 
         const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scope)}`;
-        return new Response(null, {\n+            status: 302,\n+            headers: {\n+                Location: authUrl\n+            }\n+        });
+        return new Response(null, {
+            status: 302,
+            headers: {
+                Location: authUrl
+            }
+        });
     }
 
     if (url.pathname === '/auth/github/callback') {
@@ -236,11 +246,21 @@ async function handleAuth(request, env) {
         const fallback = frontendUrl || '/dashboard.html';
 
         if (!code) {
-            return new Response(null, {\n+                status: 302,\n+                headers: {\n+                    Location: appendErrorParam(fallback, 'no_code', url)\n+                }\n+            });
+            return new Response(null, {
+                status: 302,
+                headers: {
+                    Location: appendErrorParam(fallback, 'no_code', url)
+                }
+            });
         }
 
         if (!clientId || !clientSecret) {
-            return new Response(null, {\n+                status: 302,\n+                headers: {\n+                    Location: appendErrorParam(fallback, 'missing_client', url)\n+                }\n+            });
+            return new Response(null, {
+                status: 302,
+                headers: {
+                    Location: appendErrorParam(fallback, 'missing_client', url)
+                }
+            });
         }
 
         try {
@@ -261,7 +281,12 @@ async function handleAuth(request, env) {
             const accessToken = tokenData?.access_token;
 
             if (!accessToken) {
-                return new Response(null, {\n+                    status: 302,\n+                    headers: {\n+                        Location: appendErrorParam(fallback, 'no_token', url)\n+                    }\n+                });
+                return new Response(null, {
+                    status: 302,
+                    headers: {
+                        Location: appendErrorParam(fallback, 'no_token', url)
+                    }
+                });
             }
 
             const userRes = await fetch('https://api.github.com/user', {
@@ -299,7 +324,12 @@ async function handleAuth(request, env) {
             return new Response(null, { status: 302, headers });
         } catch (error) {
             console.error('OAuth Error:', error.message);
-            return new Response(null, {\n+                status: 302,\n+                headers: {\n+                    Location: appendErrorParam(fallback, 'oauth_failed', url)\n+                }\n+            });
+            return new Response(null, {
+                status: 302,
+                headers: {
+                    Location: appendErrorParam(fallback, 'oauth_failed', url)
+                }
+            });
         }
     }
 

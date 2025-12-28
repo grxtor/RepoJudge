@@ -19,8 +19,10 @@ let currentFilter = 'all';
 
 const STORAGE_KEYS = {
     apiBase: 'repojudge_api_base',
-    githubToken: 'repojudge_github_token',
-    geminiKey: 'repojudge_gemini_key'
+    geminiKey: 'repojudge_gemini_key',
+    githubClientId: 'repojudge_github_client_id',
+    githubClientSecret: 'repojudge_github_client_secret',
+    sessionSecret: 'repojudge_session_secret'
 };
 
 const memoryStore = {};
@@ -68,12 +70,20 @@ function getApiBase() {
     return getStoredValue(STORAGE_KEYS.apiBase);
 }
 
-function getGithubToken() {
-    return getStoredValue(STORAGE_KEYS.githubToken);
-}
-
 function getGeminiKey() {
     return getStoredValue(STORAGE_KEYS.geminiKey);
+}
+
+function getGithubClientId() {
+    return getStoredValue(STORAGE_KEYS.githubClientId);
+}
+
+function getGithubClientSecret() {
+    return getStoredValue(STORAGE_KEYS.githubClientSecret);
+}
+
+function getSessionSecret() {
+    return getStoredValue(STORAGE_KEYS.sessionSecret);
 }
 
 function buildApiUrl(path) {
@@ -86,11 +96,15 @@ function buildApiUrl(path) {
 
 function buildHeaders(extra = {}) {
     const headers = { ...extra };
-    const githubToken = getGithubToken();
     const geminiKey = getGeminiKey();
+    const githubClientId = getGithubClientId();
+    const githubClientSecret = getGithubClientSecret();
+    const sessionSecret = getSessionSecret();
 
-    if (githubToken) headers['x-github-token'] = githubToken;
     if (geminiKey) headers['x-gemini-key'] = geminiKey;
+    if (githubClientId) headers['x-github-client-id'] = githubClientId;
+    if (githubClientSecret) headers['x-github-client-secret'] = githubClientSecret;
+    if (sessionSecret) headers['x-session-secret'] = sessionSecret;
 
     return headers;
 }
@@ -121,7 +135,8 @@ async function refreshBackendStatus() {
 
 function updateApiSettingsStatus() {
     const geminiStatus = document.getElementById('geminiKeyStatus');
-    if (!geminiStatus) return;
+    const githubStatus = document.getElementById('githubClientStatus');
+    if (!geminiStatus || !githubStatus) return;
 
     if (backendStatus.loaded && backendStatus.geminiConfigured) {
         geminiStatus.textContent = 'Gemini key optional: backend already configured.';
@@ -129,6 +144,14 @@ function updateApiSettingsStatus() {
     } else {
         geminiStatus.textContent = 'Required on GitHub Pages if backend has no key.';
         geminiStatus.classList.remove('status-ok');
+    }
+
+    if (backendStatus.loaded && backendStatus.githubOAuthConfigured) {
+        githubStatus.textContent = 'OAuth client optional: backend already configured.';
+        githubStatus.classList.add('status-ok');
+    } else {
+        githubStatus.textContent = 'Required to enable GitHub login from the frontend.';
+        githubStatus.classList.remove('status-ok');
     }
 }
 
@@ -278,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshBackendStatus();
     updateUI();
 
-    if (isGithubPagesHost() && (!getApiBase() || !getGeminiKey() || !getGithubToken())) {
+    if (isGithubPagesHost() && (!getApiBase() || !getGeminiKey() || !getGithubClientId() || !getGithubClientSecret() || !getSessionSecret())) {
         window.openApiSettingsModal?.();
     }
 
@@ -322,14 +345,14 @@ async function checkAuth() {
         const res = await fetch(buildApiUrl('/api/user'), { headers: buildHeaders() });
         const data = res.ok ? await res.json() : { authenticated: false };
         console.log('[Auth] Response:', data);
-        const hasToken = Boolean(getGithubToken());
+        const hasClientConfig = Boolean(getGithubClientId() && getGithubClientSecret());
 
         if (data.authenticated && data.user) {
             console.log('[Auth] SUCCESS: Logged in as', data.user.login);
 
             // 1. Update Profile Information
             if (nameEl) nameEl.textContent = data.user.name || data.user.login || 'User';
-            if (planEl) planEl.textContent = hasToken ? 'Token Mode' : 'Pro Plan';
+            if (planEl) planEl.textContent = hasClientConfig ? 'OAuth Ready' : 'Pro Plan';
             if (settingsEmailEl) settingsEmailEl.textContent = data.user.email || `${data.user.login}@github.com`;
 
             if (avatarImg) {
@@ -352,14 +375,14 @@ async function checkAuth() {
         } else {
             console.log('[Auth] GUEST: No active session.');
 
-            if (nameEl) nameEl.textContent = hasToken ? 'Token Mode' : 'Guest';
-            if (planEl) planEl.textContent = hasToken ? 'Waiting for token' : 'Free Plan';
-            if (settingsEmailEl) settingsEmailEl.textContent = hasToken ? 'token@repojudge.yongdohyun.org.tr' : 'guest@repojudge.yongdohyun.org.tr';
+            if (nameEl) nameEl.textContent = hasClientConfig ? 'OAuth Ready' : 'Guest';
+            if (planEl) planEl.textContent = hasClientConfig ? 'Ready to Login' : 'Free Plan';
+            if (settingsEmailEl) settingsEmailEl.textContent = hasClientConfig ? 'oauth@repojudge.yongdohyun.org.tr' : 'guest@repojudge.yongdohyun.org.tr';
 
             if (avatarImg) avatarImg.classList.add('hidden');
             if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
 
-            if (loginItem) loginItem.classList.toggle('hidden', hasToken || isGhPages);
+            if (loginItem) loginItem.classList.toggle('hidden', isGhPages && !hasClientConfig);
             if (profileItem) profileItem.classList.add('hidden');
             if (logoutItem) logoutItem.classList.add('hidden');
             if (upgradeBtn) upgradeBtn.classList.add('hidden');
@@ -368,16 +391,16 @@ async function checkAuth() {
         }
     } catch (err) {
         console.error('[Auth] Critical Error:', err);
-        const hasToken = Boolean(getGithubToken());
+        const hasClientConfig = Boolean(getGithubClientId() && getGithubClientSecret());
 
-        if (nameEl) nameEl.textContent = hasToken ? 'Token Mode' : 'Guest';
-        if (planEl) planEl.textContent = hasToken ? 'Waiting for token' : 'Free Plan';
-        if (settingsEmailEl) settingsEmailEl.textContent = hasToken ? 'token@repojudge.yongdohyun.org.tr' : 'guest@repojudge.yongdohyun.org.tr';
+        if (nameEl) nameEl.textContent = hasClientConfig ? 'OAuth Ready' : 'Guest';
+        if (planEl) planEl.textContent = hasClientConfig ? 'Ready to Login' : 'Free Plan';
+        if (settingsEmailEl) settingsEmailEl.textContent = hasClientConfig ? 'oauth@repojudge.yongdohyun.org.tr' : 'guest@repojudge.yongdohyun.org.tr';
 
         if (avatarImg) avatarImg.classList.add('hidden');
         if (avatarPlaceholder) avatarPlaceholder.classList.remove('hidden');
 
-        if (loginItem) loginItem.classList.toggle('hidden', hasToken || isGhPages);
+        if (loginItem) loginItem.classList.toggle('hidden', isGhPages && !hasClientConfig);
         if (profileItem) profileItem.classList.add('hidden');
         if (logoutItem) logoutItem.classList.add('hidden');
         if (upgradeBtn) upgradeBtn.classList.add('hidden');
@@ -516,7 +539,20 @@ function setupEventListeners() {
 
     // Login/Logout Actions
     document.getElementById('loginMenuItem')?.addEventListener('click', () => {
-        window.location.href = buildApiUrl('/auth/github');
+        if (!ensureBackendConfigured()) return;
+        const clientId = getGithubClientId();
+        const clientSecret = getGithubClientSecret();
+        const sessionSecret = getSessionSecret();
+        if (!clientId || !clientSecret) {
+            window.openApiSettingsModal?.();
+            alert('Please set GitHub Client ID/Secret in API Settings.');
+            return;
+        }
+        const params = new URLSearchParams();
+        params.set('client_id', clientId);
+        params.set('client_secret', clientSecret);
+        if (sessionSecret) params.set('session_secret', sessionSecret);
+        window.location.href = `${buildApiUrl('/auth/github')}?${params.toString()}`;
     });
     document.getElementById('logoutMenuItem')?.addEventListener('click', () => {
         window.location.href = buildApiUrl('/auth/logout');
@@ -601,8 +637,10 @@ function setupApiSettingsModal() {
     const openBtn = document.getElementById('apiSettingsItem');
     const closeBtn = modal?.querySelector('.close-modal');
     const apiBaseInput = document.getElementById('apiBaseInput');
-    const githubTokenInput = document.getElementById('githubTokenInput');
     const geminiKeyInput = document.getElementById('geminiKeyInput');
+    const githubClientIdInput = document.getElementById('githubClientIdInput');
+    const githubClientSecretInput = document.getElementById('githubClientSecretInput');
+    const sessionSecretInput = document.getElementById('sessionSecretInput');
     const storageNote = document.getElementById('storageNote');
     const saveBtn = document.getElementById('saveApiSettings');
     const clearBtn = document.getElementById('clearApiSettings');
@@ -611,8 +649,10 @@ function setupApiSettingsModal() {
 
     function openModal() {
         if (apiBaseInput) apiBaseInput.value = getApiBase();
-        if (githubTokenInput) githubTokenInput.value = getGithubToken();
         if (geminiKeyInput) geminiKeyInput.value = getGeminiKey();
+        if (githubClientIdInput) githubClientIdInput.value = getGithubClientId();
+        if (githubClientSecretInput) githubClientSecretInput.value = getGithubClientSecret();
+        if (sessionSecretInput) sessionSecretInput.value = getSessionSecret();
         if (storageNote) storageNote.classList.toggle('hidden', hasStorage);
         updateApiSettingsStatus();
         modal.classList.remove('hidden');
@@ -624,17 +664,25 @@ function setupApiSettingsModal() {
 
     function saveSettings() {
         const apiBase = apiBaseInput?.value.trim() || '';
-        const githubToken = githubTokenInput?.value.trim() || '';
         const geminiKey = geminiKeyInput?.value.trim() || '';
+        const githubClientId = githubClientIdInput?.value.trim() || '';
+        const githubClientSecret = githubClientSecretInput?.value.trim() || '';
+        const sessionSecret = sessionSecretInput?.value.trim() || '';
 
         if (apiBase) setStoredValue(STORAGE_KEYS.apiBase, apiBase);
         else removeStoredValue(STORAGE_KEYS.apiBase);
 
-        if (githubToken) setStoredValue(STORAGE_KEYS.githubToken, githubToken);
-        else removeStoredValue(STORAGE_KEYS.githubToken);
-
         if (geminiKey) setStoredValue(STORAGE_KEYS.geminiKey, geminiKey);
         else removeStoredValue(STORAGE_KEYS.geminiKey);
+
+        if (githubClientId) setStoredValue(STORAGE_KEYS.githubClientId, githubClientId);
+        else removeStoredValue(STORAGE_KEYS.githubClientId);
+
+        if (githubClientSecret) setStoredValue(STORAGE_KEYS.githubClientSecret, githubClientSecret);
+        else removeStoredValue(STORAGE_KEYS.githubClientSecret);
+
+        if (sessionSecret) setStoredValue(STORAGE_KEYS.sessionSecret, sessionSecret);
+        else removeStoredValue(STORAGE_KEYS.sessionSecret);
 
         closeModal();
         checkAuth();
@@ -644,12 +692,16 @@ function setupApiSettingsModal() {
 
     function clearSettings() {
         removeStoredValue(STORAGE_KEYS.apiBase);
-        removeStoredValue(STORAGE_KEYS.githubToken);
         removeStoredValue(STORAGE_KEYS.geminiKey);
+        removeStoredValue(STORAGE_KEYS.githubClientId);
+        removeStoredValue(STORAGE_KEYS.githubClientSecret);
+        removeStoredValue(STORAGE_KEYS.sessionSecret);
 
         if (apiBaseInput) apiBaseInput.value = '';
-        if (githubTokenInput) githubTokenInput.value = '';
         if (geminiKeyInput) geminiKeyInput.value = '';
+        if (githubClientIdInput) githubClientIdInput.value = '';
+        if (githubClientSecretInput) githubClientSecretInput.value = '';
+        if (sessionSecretInput) sessionSecretInput.value = '';
 
         closeModal();
         checkAuth();

@@ -404,21 +404,33 @@
             <div class="modal-body">
                 <p>Set your backend URL and tokens. Values are stored in localStorage on this device.</p>
                 <div class="settings-form">
-                    <label class="settings-label" for="apiBaseInput">Backend URL</label>
+                    <label class="settings-label" for="apiBaseInput">Backend URL (API_BASE_URL)</label>
                     <input id="apiBaseInput" class="settings-input" type="url"
                         placeholder="https://api.yourdomain.com">
-                    <span class="settings-help">Leave empty for same-origin backend.</span>
+                    <span class="settings-help">Use the deployed server URL. Leave empty for same-origin backend.</span>
 
-                    <label class="settings-label" for="githubTokenInput">GitHub Token</label>
-                    <input id="githubTokenInput" class="settings-input" type="password" autocomplete="off"
-                        placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                    <span class="settings-help">Required for private repos and user profile data.</span>
-
-                    <label class="settings-label" for="geminiKeyInput">Gemini API Key</label>
+                    <label class="settings-label" for="geminiKeyInput">Gemini API Key (GEMINI_API_KEY)</label>
                     <input id="geminiKeyInput" class="settings-input" type="password" autocomplete="off"
                         placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx">
-                    <span class="settings-help">Used by the backend to call Gemini on your behalf.</span>
+                    <span class="settings-help">Optional if the backend already has GEMINI_API_KEY configured.</span>
                     <span id="geminiKeyStatus" class="settings-help"></span>
+
+                    <label class="settings-label" for="githubClientIdInput">GitHub Client ID (GITHUB_CLIENT_ID)</label>
+                    <input id="githubClientIdInput" class="settings-input" type="text" autocomplete="off"
+                        placeholder="Ov23lxxxxxxxxxxxxxx">
+                    <span class="settings-help">OAuth App Client ID for login and private repo access.</span>
+
+                    <label class="settings-label" for="githubClientSecretInput">GitHub Client Secret (GITHUB_CLIENT_SECRET)</label>
+                    <input id="githubClientSecretInput" class="settings-input" type="password" autocomplete="off"
+                        placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                    <span class="settings-help">Used by the backend during OAuth token exchange.</span>
+                    <span id="githubClientStatus" class="settings-help"></span>
+
+                    <label class="settings-label" for="sessionSecretInput">Session Secret (SESSION_SECRET)</label>
+                    <input id="sessionSecretInput" class="settings-input" type="password" autocomplete="off"
+                        placeholder="your_random_session_secret">
+                    <span class="settings-help">Used for session signing on the backend.</span>
+
                     <span id="storageNote" class="settings-help hidden">Local storage is disabled; settings will only persist for this session.</span>
                 </div>
                 <div class="settings-actions">

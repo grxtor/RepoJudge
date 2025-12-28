@@ -4,28 +4,55 @@ const axios = require('axios');
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const CALLBACK_URL = 'http://localhost:3000/auth/github/callback';
+const CALLBACK_URL = process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback';
+
+function resolveGithubConfig(req) {
+    const clientId = req.query.client_id || req.headers['x-github-client-id'] || GITHUB_CLIENT_ID;
+    const clientSecret = req.query.client_secret || req.headers['x-github-client-secret'] || GITHUB_CLIENT_SECRET;
+    const sessionSecret = req.query.session_secret || req.headers['x-session-secret'];
+
+    const callbackParams = new URLSearchParams();
+    if (req.query.client_id) callbackParams.set('client_id', clientId);
+    if (req.query.client_secret) callbackParams.set('client_secret', clientSecret);
+    if (sessionSecret) callbackParams.set('session_secret', sessionSecret);
+    const callbackUrl = callbackParams.toString()
+        ? `${CALLBACK_URL}?${callbackParams.toString()}`
+        : CALLBACK_URL;
+
+    return { clientId, clientSecret, callbackUrl };
+}
 
 // Redirect to GitHub OAuth
 router.get('/github', (req, res) => {
     const scope = 'read:user user:email repo';
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(CALLBACK_URL)}&scope=${encodeURIComponent(scope)}`;
+    const { clientId, callbackUrl } = resolveGithubConfig(req);
+
+    if (!clientId) {
+        return res.status(400).send('Missing GitHub Client ID');
+    }
+
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scope)}`;
     res.redirect(authUrl);
 });
 
 // Handle OAuth callback
 router.get('/github/callback', async (req, res) => {
     const { code } = req.query;
+    const { clientId, clientSecret } = resolveGithubConfig(req);
 
     if (!code) {
         return res.redirect('/dashboard.html?error=no_code');
     }
 
+    if (!clientId || !clientSecret) {
+        return res.redirect('/dashboard.html?error=missing_client');
+    }
+
     try {
         // Exchange code for access token
         const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
-            client_id: GITHUB_CLIENT_ID,
-            client_secret: GITHUB_CLIENT_SECRET,
+            client_id: clientId,
+            client_secret: clientSecret,
             code
         }, {
             headers: { Accept: 'application/json' }

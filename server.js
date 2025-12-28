@@ -28,16 +28,23 @@ app.use((req, res, next) => {
 });
 
 // Session middleware with Redis
-app.use(session({
-    store: new RedisStore({ client: redisClient }),
-    secret: process.env.SESSION_SECRET || 'fallback-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: false, // Set to true in production with HTTPS
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-}));
+const sessionStore = new RedisStore({ client: redisClient });
+app.use((req, res, next) => {
+    const headerSecret = req.headers['x-session-secret'];
+    const querySecret = req.query?.session_secret;
+    const secret = headerSecret || querySecret || process.env.SESSION_SECRET || 'fallback-secret';
+
+    return session({
+        store: sessionStore,
+        secret,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: false, // Set to true in production with HTTPS
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        }
+    })(req, res, next);
+});
 
 app.use(express.static('public'));
 
@@ -230,9 +237,16 @@ app.get('/api/repos', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
+    const headerGemini = req.headers['x-gemini-key'];
+    const headerClientId = req.headers['x-github-client-id'];
+    const headerClientSecret = req.headers['x-github-client-secret'];
+
     res.json({
-        geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
-        githubOAuthConfigured: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+        geminiConfigured: Boolean(process.env.GEMINI_API_KEY || headerGemini),
+        githubOAuthConfigured: Boolean(
+            (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) ||
+            (headerClientId && headerClientSecret)
+        )
     });
 });
 

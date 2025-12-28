@@ -17,3 +17,4 @@ screenshots/
 public/image.png
 docs/
 dump.rdb
+.env.example

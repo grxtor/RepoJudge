@@ -67,15 +67,16 @@ cp .env.example .env
 npm start
 ```
 
-### Environment Variables
+### Runtime Keys (Frontend)
 
 ```env
-PORT=3000
 GEMINI_API_KEY=your_gemini_api_key
 GITHUB_CLIENT_ID=your_github_oauth_client_id
 GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
 SESSION_SECRET=your_random_session_secret
 ```
+
+These values are collected in the **API Settings** modal on first visit and sent to the backend via headers/query. `.env` is no longer required for these keys.
 
 ### GitHub Pages (Frontend + Remote Backend)
 
@@ -91,8 +92,9 @@ RepoJudge can run on GitHub Pages as a static frontend that talks to a separatel
 3. Configure GitHub Pages to serve the `/docs` folder.
 4. Open `dashboard.html` and set:
    - Backend URL
-   - GitHub token
    - Gemini API key
+   - GitHub Client ID / Secret
+   - Session secret
 
 On first visit the site prompts for these values. If localStorage is available, they are stored on the client device.
 
@@ -104,7 +106,7 @@ On first visit the site prompts for these values. If localStorage is available, 
    - **Application name:** RepoJudge
    - **Homepage URL:** http://localhost:3000
    - **Authorization callback URL:** http://localhost:3000/auth/github/callback
-4. Copy Client ID and Client Secret to your `.env` file
+4. Enter Client ID and Client Secret in the API Settings modal on the frontend
 
 ## 📦 Tech Stack
 

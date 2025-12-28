@@ -3,7 +3,6 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const session = require('express-session');
-require('dotenv').config();
 
 const { redisClient, connectRedis, getCache, setCache } = require('./src/services/redis');
 const RedisStore = require('connect-redis').RedisStore;
@@ -15,10 +14,12 @@ const authRoutes = require('./src/routes/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1);
+
 // Connect to Redis
 connectRedis().catch(console.error);
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // Request logger middleware
@@ -32,7 +33,8 @@ const sessionStore = new RedisStore({ client: redisClient });
 app.use((req, res, next) => {
     const headerSecret = req.headers['x-session-secret'];
     const querySecret = req.query?.session_secret;
-    const secret = headerSecret || querySecret || process.env.SESSION_SECRET || 'fallback-secret';
+    const secret = headerSecret || querySecret || 'fallback-secret';
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
 
     return session({
         store: sessionStore,
@@ -40,7 +42,8 @@ app.use((req, res, next) => {
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: false, // Set to true in production with HTTPS
+            secure: isSecure,
+            sameSite: isSecure ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }
     })(req, res, next);
@@ -51,9 +54,9 @@ app.use(express.static('public'));
 // Auth routes
 app.use('/auth', authRoutes);
 
-// Helper to get auth token from headers or session
+// Helper to get auth token from session
 function getGithubToken(req) {
-    return req.headers['x-github-token'] || req.session?.user?.accessToken || null;
+    return req.session?.user?.accessToken || null;
 }
 
 function getGeminiKey(req) {
@@ -242,11 +245,8 @@ app.get('/api/status', (req, res) => {
     const headerClientSecret = req.headers['x-github-client-secret'];
 
     res.json({
-        geminiConfigured: Boolean(process.env.GEMINI_API_KEY || headerGemini),
-        githubOAuthConfigured: Boolean(
-            (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) ||
-            (headerClientId && headerClientSecret)
-        )
+        geminiConfigured: Boolean(headerGemini),
+        githubOAuthConfigured: Boolean(headerClientId && headerClientSecret)
     });
 });
 

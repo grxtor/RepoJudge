@@ -2,33 +2,49 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const CALLBACK_URL = process.env.GITHUB_CALLBACK_URL || 'http://localhost:3000/auth/github/callback';
+const CALLBACK_PATH = '/auth/github/callback';
 
 function resolveGithubConfig(req) {
-    const clientId = req.query.client_id || req.headers['x-github-client-id'] || GITHUB_CLIENT_ID;
-    const clientSecret = req.query.client_secret || req.headers['x-github-client-secret'] || GITHUB_CLIENT_SECRET;
+    const clientId = req.query.client_id || req.headers['x-github-client-id'];
+    const clientSecret = req.query.client_secret || req.headers['x-github-client-secret'];
     const sessionSecret = req.query.session_secret || req.headers['x-session-secret'];
+    const frontendUrl = req.query.frontend_url || req.headers['x-frontend-url'];
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const baseCallbackUrl = `${protocol}://${host}${CALLBACK_PATH}`;
 
     const callbackParams = new URLSearchParams();
     if (req.query.client_id) callbackParams.set('client_id', clientId);
     if (req.query.client_secret) callbackParams.set('client_secret', clientSecret);
     if (sessionSecret) callbackParams.set('session_secret', sessionSecret);
+    if (frontendUrl) callbackParams.set('frontend_url', frontendUrl);
     const callbackUrl = callbackParams.toString()
-        ? `${CALLBACK_URL}?${callbackParams.toString()}`
-        : CALLBACK_URL;
+        ? `${baseCallbackUrl}?${callbackParams.toString()}`
+        : baseCallbackUrl;
 
-    return { clientId, clientSecret, callbackUrl };
+    return { clientId, clientSecret, callbackUrl, frontendUrl };
+}
+
+function appendErrorParam(target, error, req) {
+    try {
+        const base = `${req.headers['x-forwarded-proto'] || req.protocol}://${req.get('host')}`;
+        const url = new URL(target, base);
+        url.searchParams.set('error', error);
+        return url.toString();
+    } catch (err) {
+        return `/dashboard.html?error=${encodeURIComponent(error)}`;
+    }
 }
 
 // Redirect to GitHub OAuth
 router.get('/github', (req, res) => {
     const scope = 'read:user user:email repo';
-    const { clientId, callbackUrl } = resolveGithubConfig(req);
+    const { clientId, callbackUrl, frontendUrl } = resolveGithubConfig(req);
 
     if (!clientId) {
-        return res.status(400).send('Missing GitHub Client ID');
+        const fallback = frontendUrl || '/dashboard.html';
+        return res.redirect(appendErrorParam(fallback, 'missing_client', req));
     }
 
     const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scope)}`;
@@ -38,14 +54,15 @@ router.get('/github', (req, res) => {
 // Handle OAuth callback
 router.get('/github/callback', async (req, res) => {
     const { code } = req.query;
-    const { clientId, clientSecret } = resolveGithubConfig(req);
+    const { clientId, clientSecret, frontendUrl } = resolveGithubConfig(req);
+    const fallback = frontendUrl || '/dashboard.html';
 
     if (!code) {
-        return res.redirect('/dashboard.html?error=no_code');
+        return res.redirect(appendErrorParam(fallback, 'no_code', req));
     }
 
     if (!clientId || !clientSecret) {
-        return res.redirect('/dashboard.html?error=missing_client');
+        return res.redirect(appendErrorParam(fallback, 'missing_client', req));
     }
 
     try {
@@ -61,7 +78,7 @@ router.get('/github/callback', async (req, res) => {
         const accessToken = tokenResponse.data.access_token;
 
         if (!accessToken) {
-            return res.redirect('/dashboard.html?error=no_token');
+            return res.redirect(appendErrorParam(fallback, 'no_token', req));
         }
 
         // Get user info
@@ -78,10 +95,10 @@ router.get('/github/callback', async (req, res) => {
             accessToken
         };
 
-        res.redirect('/dashboard.html');
+        res.redirect(fallback);
     } catch (error) {
         console.error('OAuth Error:', error.message);
-        res.redirect('/dashboard.html?error=oauth_failed');
+        res.redirect(appendErrorParam(fallback, 'oauth_failed', req));
     }
 });
 
@@ -116,8 +133,11 @@ router.get('/token', (req, res) => {
 
 // Logout
 router.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/');
+    const frontendUrl = req.query.frontend_url;
+    const fallback = frontendUrl || '/';
+    req.session.destroy(() => {
+        res.redirect(fallback);
+    });
 });
 
 // Get user's repositories

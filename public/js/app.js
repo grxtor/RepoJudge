@@ -118,7 +118,10 @@ async function refreshBackendStatus() {
     if (!base && isGithubPagesHost()) return;
 
     try {
-        const res = await fetch(buildApiUrl('/api/status'), { headers: buildHeaders() });
+        const res = await fetch(buildApiUrl('/api/status'), {
+            headers: buildHeaders(),
+            credentials: 'include'
+        });
         if (!res.ok) throw new Error('Status fetch failed');
         const data = await res.json();
         backendStatus = {
@@ -281,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize Model Selector
-    const savedModel = localStorage.getItem('repojudge_model') || 'flash';
+    const savedModel = hasStorage ? (localStorage.getItem('repojudge_model') || 'flash') : 'flash';
     const modelSelect = document.getElementById('modelSelect');
     if (modelSelect) {
         modelSelect.value = savedModel;
@@ -342,7 +345,10 @@ async function checkAuth() {
     const isGhPages = isGithubPagesHost();
 
     try {
-        const res = await fetch(buildApiUrl('/api/user'), { headers: buildHeaders() });
+        const res = await fetch(buildApiUrl('/api/user'), {
+            headers: buildHeaders(),
+            credentials: 'include'
+        });
         const data = res.ok ? await res.json() : { authenticated: false };
         console.log('[Auth] Response:', data);
         const hasClientConfig = Boolean(getGithubClientId() && getGithubClientSecret());
@@ -487,7 +493,10 @@ function renderReposList(repos) {
 // Load user's GitHub repositories
 async function loadUserRepos() {
     try {
-        const res = await fetch(buildApiUrl('/api/repos'), { headers: buildHeaders() });
+        const res = await fetch(buildApiUrl('/api/repos'), {
+            headers: buildHeaders(),
+            credentials: 'include'
+        });
         const data = await res.json();
         renderReposList(data.repos);
     } catch (err) {
@@ -552,10 +561,16 @@ function setupEventListeners() {
         params.set('client_id', clientId);
         params.set('client_secret', clientSecret);
         if (sessionSecret) params.set('session_secret', sessionSecret);
+        params.set('frontend_url', window.location.href.split('#')[0]);
         window.location.href = `${buildApiUrl('/auth/github')}?${params.toString()}`;
     });
     document.getElementById('logoutMenuItem')?.addEventListener('click', () => {
-        window.location.href = buildApiUrl('/auth/logout');
+        const params = new URLSearchParams();
+        const sessionSecret = getSessionSecret();
+        if (sessionSecret) params.set('session_secret', sessionSecret);
+        params.set('frontend_url', window.location.href.split('#')[0]);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        window.location.href = `${buildApiUrl('/auth/logout')}${suffix}`;
     });
 
     // Tab switching
@@ -759,6 +774,7 @@ function setupIntegratedChat() {
             const res = await fetch(buildApiUrl('/api/chat'), {
                 method: 'POST',
                 headers: buildHeaders({ 'Content-Type': 'application/json' }),
+                credentials: 'include',
                 body: JSON.stringify({
                     repoUrl: currentAnalysis.url,
                     message: text,
@@ -931,11 +947,13 @@ async function startAnalysis(options = {}) {
             fetch(buildApiUrl('/api/generate'), {
                 method: 'POST',
                 headers: buildHeaders({ 'Content-Type': 'application/json' }),
+                credentials: 'include',
                 body: JSON.stringify({ repoUrl: url, language: selectedLang, forceRefresh, model })
             }),
             fetch(buildApiUrl('/api/analyze'), {
                 method: 'POST',
                 headers: buildHeaders({ 'Content-Type': 'application/json' }),
+                credentials: 'include',
                 body: JSON.stringify({ repoUrl: url, language: selectedLang, forceRefresh, model })
             })
         ]);

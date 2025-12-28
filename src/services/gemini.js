@@ -1,5 +1,4 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-require('dotenv').config();
 
 const CLIENTS = new Map();
 
@@ -17,7 +16,7 @@ const GENERATION_CONFIG = {
 };
 
 function getGenAI(apiKey) {
-    const key = apiKey || process.env.GEMINI_API_KEY;
+    const key = apiKey;
     if (!key) {
         throw new Error('Missing Gemini API key.');
     }

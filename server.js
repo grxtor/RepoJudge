@@ -4,9 +4,6 @@ const axios = require('axios');
 const path = require('path');
 const session = require('express-session');
 
-const { redisClient, connectRedis, getCache, setCache } = require('./src/services/redis');
-const RedisStore = require('connect-redis').RedisStore;
-
 const { getRepoStructure, getFileContents } = require('./src/services/github');
 const { generateReadme, analyzeRepo, chatWithRepo } = require('./src/services/gemini');
 const authRoutes = require('./src/routes/auth');
@@ -16,8 +13,21 @@ const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
 
-// Connect to Redis
-connectRedis().catch(console.error);
+const cacheStore = new Map();
+
+function getCache(key) {
+    const entry = cacheStore.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt < Date.now()) {
+        cacheStore.delete(key);
+        return null;
+    }
+    return entry.value;
+}
+
+function setCache(key, value, ttlSeconds = 3600) {
+    cacheStore.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
+}
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -28,8 +38,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Session middleware with Redis
-const sessionStore = new RedisStore({ client: redisClient });
+// Session middleware (in-memory)
 app.use((req, res, next) => {
     const headerSecret = req.headers['x-session-secret'];
     const querySecret = req.query?.session_secret;
@@ -37,7 +46,6 @@ app.use((req, res, next) => {
     const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
 
     return session({
-        store: sessionStore,
         secret,
         resave: false,
         saveUninitialized: false,

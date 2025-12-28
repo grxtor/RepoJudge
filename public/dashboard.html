@@ -410,17 +410,6 @@
                     <span class="settings-help">Optional if the backend already has GEMINI_API_KEY configured.</span>
                     <span id="geminiKeyStatus" class="settings-help"></span>
 
-                    <label class="settings-label" for="githubClientIdInput">GitHub Client ID (GITHUB_CLIENT_ID)</label>
-                    <input id="githubClientIdInput" class="settings-input" type="text" autocomplete="off"
-                        placeholder="Ov23lxxxxxxxxxxxxxx">
-                    <span class="settings-help">OAuth App Client ID for login and private repo access.</span>
-
-                    <label class="settings-label" for="githubClientSecretInput">GitHub Client Secret (GITHUB_CLIENT_SECRET)</label>
-                    <input id="githubClientSecretInput" class="settings-input" type="password" autocomplete="off"
-                        placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-                    <span class="settings-help">Used by the backend during OAuth token exchange.</span>
-                    <span id="githubClientStatus" class="settings-help"></span>
-
                     <label class="settings-label" for="sessionSecretInput">Session Secret (SESSION_SECRET)</label>
                     <input id="sessionSecretInput" class="settings-input" type="password" autocomplete="off"
                         placeholder="your_random_session_secret">
@@ -438,10 +427,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
-        // Optional: set the Cloudflare Worker origin if backend is on a different host.
-        // window.__API_BASE__ = 'https://your-worker.yourdomain.workers.dev';
+        window.__API_BASE__ = 'https://rjapi.yongdohyun.org.tr';
     </script>
-    <script src="js/app.js?v=27"></script>
+    <script src="js/app.js?v=29"></script>
 </body>
 
 </html>

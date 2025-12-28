@@ -2,7 +2,8 @@ const GITHUB_API_BASE = 'https://api.github.com';
 
 function buildGithubHeaders(authToken) {
     const headers = {
-        'Accept': 'application/vnd.github.v3+json'
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'RepoJudge Worker'
     };
 
     if (authToken) {

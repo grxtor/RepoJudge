@@ -19,8 +19,6 @@ let currentFilter = 'all';
 
 const STORAGE_KEYS = {
     geminiKey: 'repojudge_gemini_key',
-    githubClientId: 'repojudge_github_client_id',
-    githubClientSecret: 'repojudge_github_client_secret',
     sessionSecret: 'repojudge_session_secret'
 };
 
@@ -73,14 +71,6 @@ function getGeminiKey() {
     return getStoredValue(STORAGE_KEYS.geminiKey);
 }
 
-function getGithubClientId() {
-    return getStoredValue(STORAGE_KEYS.githubClientId);
-}
-
-function getGithubClientSecret() {
-    return getStoredValue(STORAGE_KEYS.githubClientSecret);
-}
-
 function getSessionSecret() {
     return getStoredValue(STORAGE_KEYS.sessionSecret);
 }
@@ -96,13 +86,9 @@ function buildApiUrl(path) {
 function buildHeaders(extra = {}) {
     const headers = { ...extra };
     const geminiKey = getGeminiKey();
-    const githubClientId = getGithubClientId();
-    const githubClientSecret = getGithubClientSecret();
     const sessionSecret = getSessionSecret();
 
     if (geminiKey) headers['x-gemini-key'] = geminiKey;
-    if (githubClientId) headers['x-github-client-id'] = githubClientId;
-    if (githubClientSecret) headers['x-github-client-secret'] = githubClientSecret;
     if (sessionSecret) headers['x-session-secret'] = sessionSecret;
 
     return headers;
@@ -110,6 +96,11 @@ function buildHeaders(extra = {}) {
 
 function isGithubPagesHost() {
     return window.location.hostname.endsWith('github.io');
+}
+
+function hasGithubOAuthConfig() {
+    if (!backendStatus.loaded) return true;
+    return backendStatus.githubOAuthConfigured;
 }
 
 async function refreshBackendStatus() {
@@ -135,22 +126,24 @@ async function refreshBackendStatus() {
 function updateApiSettingsStatus() {
     const geminiStatus = document.getElementById('geminiKeyStatus');
     const githubStatus = document.getElementById('githubClientStatus');
-    if (!geminiStatus || !githubStatus) return;
-
-    if (backendStatus.loaded && backendStatus.geminiConfigured) {
-        geminiStatus.textContent = 'Gemini key optional: backend already configured.';
-        geminiStatus.classList.add('status-ok');
-    } else {
-        geminiStatus.textContent = 'Required on GitHub Pages if backend has no key.';
-        geminiStatus.classList.remove('status-ok');
+    if (geminiStatus) {
+        if (backendStatus.loaded && backendStatus.geminiConfigured) {
+            geminiStatus.textContent = 'Gemini key optional: backend already configured.';
+            geminiStatus.classList.add('status-ok');
+        } else {
+            geminiStatus.textContent = 'Required on GitHub Pages if backend has no key.';
+            geminiStatus.classList.remove('status-ok');
+        }
     }
 
-    if (backendStatus.loaded && backendStatus.githubOAuthConfigured) {
-        githubStatus.textContent = 'OAuth client optional: backend already configured.';
-        githubStatus.classList.add('status-ok');
-    } else {
-        githubStatus.textContent = 'Required to enable GitHub login from the frontend.';
-        githubStatus.classList.remove('status-ok');
+    if (githubStatus) {
+        if (backendStatus.loaded && backendStatus.githubOAuthConfigured) {
+            githubStatus.textContent = 'OAuth client optional: backend already configured.';
+            githubStatus.classList.add('status-ok');
+        } else {
+            githubStatus.textContent = 'Required to enable GitHub login from the frontend.';
+            githubStatus.classList.remove('status-ok');
+        }
     }
 }
 
@@ -167,6 +160,11 @@ function ensureGeminiConfigured() {
         return false;
     }
     return true;
+}
+
+function shouldPromptForSettings() {
+    const needsGemini = !getGeminiKey() && !(backendStatus.loaded && backendStatus.geminiConfigured);
+    return needsGemini;
 }
 
 // Translations
@@ -291,18 +289,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupFolderListeners();
     setupApiSettingsModal();
-    refreshBackendStatus();
     updateUI();
-
-    if (isGithubPagesHost() && (!getGeminiKey() || !getGithubClientId() || !getGithubClientSecret() || !getSessionSecret())) {
-        window.openApiSettingsModal?.();
-    }
-
-    // Check auth last
-    setTimeout(() => {
+    refreshBackendStatus().finally(() => {
+        if (isGithubPagesHost() && shouldPromptForSettings()) {
+            window.openApiSettingsModal?.();
+        }
         console.log('Checking Auth...');
         checkAuth();
-    }, 100);
+    });
 
     // Check for demo mode (?demo=owner/repo)
     const urlParams = new URLSearchParams(window.location.search);
@@ -341,7 +335,7 @@ async function checkAuth() {
         });
         const data = res.ok ? await res.json() : { authenticated: false };
         console.log('[Auth] Response:', data);
-        const hasClientConfig = Boolean(getGithubClientId() && getGithubClientSecret());
+        const hasClientConfig = hasGithubOAuthConfig();
 
         if (data.authenticated && data.user) {
             console.log('[Auth] SUCCESS: Logged in as', data.user.login);
@@ -387,7 +381,7 @@ async function checkAuth() {
         }
     } catch (err) {
         console.error('[Auth] Critical Error:', err);
-        const hasClientConfig = Boolean(getGithubClientId() && getGithubClientSecret());
+        const hasClientConfig = hasGithubOAuthConfig();
 
         if (nameEl) nameEl.textContent = hasClientConfig ? 'OAuth Ready' : 'Guest';
         if (planEl) planEl.textContent = hasClientConfig ? 'Ready to Login' : 'Free Plan';
@@ -539,17 +533,8 @@ function setupEventListeners() {
     // Login/Logout Actions
     document.getElementById('loginMenuItem')?.addEventListener('click', () => {
         if (!ensureBackendConfigured()) return;
-        const clientId = getGithubClientId();
-        const clientSecret = getGithubClientSecret();
         const sessionSecret = getSessionSecret();
-        if (!clientId || !clientSecret) {
-            window.openApiSettingsModal?.();
-            alert('Please set GitHub Client ID/Secret in API Settings.');
-            return;
-        }
         const params = new URLSearchParams();
-        params.set('client_id', clientId);
-        params.set('client_secret', clientSecret);
         if (sessionSecret) params.set('session_secret', sessionSecret);
         params.set('frontend_url', window.location.href.split('#')[0]);
         window.location.href = `${buildApiUrl('/auth/github')}?${params.toString()}`;
@@ -642,8 +627,6 @@ function setupApiSettingsModal() {
     const openBtn = document.getElementById('apiSettingsItem');
     const closeBtn = modal?.querySelector('.close-modal');
     const geminiKeyInput = document.getElementById('geminiKeyInput');
-    const githubClientIdInput = document.getElementById('githubClientIdInput');
-    const githubClientSecretInput = document.getElementById('githubClientSecretInput');
     const sessionSecretInput = document.getElementById('sessionSecretInput');
     const storageNote = document.getElementById('storageNote');
     const saveBtn = document.getElementById('saveApiSettings');
@@ -653,8 +636,6 @@ function setupApiSettingsModal() {
 
     function openModal() {
         if (geminiKeyInput) geminiKeyInput.value = getGeminiKey();
-        if (githubClientIdInput) githubClientIdInput.value = getGithubClientId();
-        if (githubClientSecretInput) githubClientSecretInput.value = getGithubClientSecret();
         if (sessionSecretInput) sessionSecretInput.value = getSessionSecret();
         if (storageNote) storageNote.classList.toggle('hidden', hasStorage);
         updateApiSettingsStatus();
@@ -667,18 +648,10 @@ function setupApiSettingsModal() {
 
     function saveSettings() {
         const geminiKey = geminiKeyInput?.value.trim() || '';
-        const githubClientId = githubClientIdInput?.value.trim() || '';
-        const githubClientSecret = githubClientSecretInput?.value.trim() || '';
         const sessionSecret = sessionSecretInput?.value.trim() || '';
 
         if (geminiKey) setStoredValue(STORAGE_KEYS.geminiKey, geminiKey);
         else removeStoredValue(STORAGE_KEYS.geminiKey);
-
-        if (githubClientId) setStoredValue(STORAGE_KEYS.githubClientId, githubClientId);
-        else removeStoredValue(STORAGE_KEYS.githubClientId);
-
-        if (githubClientSecret) setStoredValue(STORAGE_KEYS.githubClientSecret, githubClientSecret);
-        else removeStoredValue(STORAGE_KEYS.githubClientSecret);
 
         if (sessionSecret) setStoredValue(STORAGE_KEYS.sessionSecret, sessionSecret);
         else removeStoredValue(STORAGE_KEYS.sessionSecret);
@@ -691,13 +664,9 @@ function setupApiSettingsModal() {
 
     function clearSettings() {
         removeStoredValue(STORAGE_KEYS.geminiKey);
-        removeStoredValue(STORAGE_KEYS.githubClientId);
-        removeStoredValue(STORAGE_KEYS.githubClientSecret);
         removeStoredValue(STORAGE_KEYS.sessionSecret);
 
         if (geminiKeyInput) geminiKeyInput.value = '';
-        if (githubClientIdInput) githubClientIdInput.value = '';
-        if (githubClientSecretInput) githubClientSecretInput.value = '';
         if (sessionSecretInput) sessionSecretInput.value = '';
 
         closeModal();
@@ -1000,6 +969,18 @@ function getText(data) {
     return data[selectedLang] || data['en'] || '';
 }
 
+function getList(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string') return [data];
+    if (typeof data === 'object') {
+        const localized = data[selectedLang] || data['en'] || data['tr'];
+        if (Array.isArray(localized)) return localized;
+        if (typeof localized === 'string') return [localized];
+    }
+    return [];
+}
+
 // Render Analysis
 function renderAnalysis() {
     const { repoName, readme, analysis } = currentAnalysis;
@@ -1034,15 +1015,13 @@ function renderAnalysis() {
     renderIssues();
 
     // Strengths (Localized)
-    const strengths = Array.isArray(analysis.strengths)
-        ? analysis.strengths
-        : (analysis.strengths?.[selectedLang] || analysis.strengths?.['en'] || []);
+    const strengths = getList(analysis.strengths);
 
     document.getElementById('strengthsList').innerHTML = strengths
         .map(s => `<li>${s}</li>`).join('');
 
     // Competitors
-    const competitors = analysis.competitors || [];
+    const competitors = getList(analysis.competitors);
     document.getElementById('competitorsList').innerHTML = competitors
         .map(c => {
             const name = typeof c === 'string' ? c : c.name;
@@ -1062,7 +1041,7 @@ function renderAnalysis() {
         : `<p style="color: var(--text-muted)">${translations[selectedLang].noIssues}</p>`;
 
     // Recommendations
-    const recommendations = analysis.recommendations || [];
+    const recommendations = getList(analysis.recommendations);
     document.getElementById('recommendationsList').innerHTML = recommendations.length
         ? recommendations.map(renderRecommendationCard).join('')
         : `<p style="color: var(--text-muted)">Harika! Şu an için önerimiz yok.</p>`;
@@ -1097,8 +1076,11 @@ function renderIssues() {
 }
 
 function renderRecommendationCard(rec) {
-    const title = getText(rec.title);
-    const desc = getText(rec.description);
+    const isString = typeof rec === 'string';
+    const title = isString ? rec : (getText(rec.title) || getText(rec));
+    const desc = isString ? '' : (getText(rec.description) || '');
+    const priority = rec?.priority || rec?.severity || 'medium';
+    const category = rec?.category || 'general';
     const priorityColors = {
         high: 'var(--danger)',
         medium: 'var(--warning)',
@@ -1111,18 +1093,21 @@ function renderRecommendationCard(rec) {
         ci_cd: 'bx-git-branch',
         performance: 'bx-rocket'
     };
+    const priorityColor = priorityColors[priority] || 'var(--text-muted)';
+    const safeTitle = title || 'Recommendation';
+    const safeDesc = desc || 'No additional details provided.';
 
     return `
         <div class="recommendation-card">
             <div class="rec-icon">
-                <i class='bx ${categoryIcons[rec.category] || 'bx-bulb'}'></i>
+                <i class='bx ${categoryIcons[category] || 'bx-bulb'}'></i>
             </div>
             <div class="rec-content">
-                <h4>${title}</h4>
-                <p>${desc}</p>
+                <h4>${safeTitle}</h4>
+                <p>${safeDesc}</p>
                 <div class="rec-meta">
-                    <span class="rec-priority" style="color: ${priorityColors[rec.priority]}">${rec.priority}</span>
-                    <button class="rec-prompt-btn" data-title="${encodeURIComponent(title)}" data-desc="${encodeURIComponent(desc)}">
+                    <span class="rec-priority" style="color: ${priorityColor}">${priority}</span>
+                    <button class="rec-prompt-btn" data-title="${encodeURIComponent(safeTitle)}" data-desc="${encodeURIComponent(safeDesc)}">
                         <i class='bx bx-copy'></i> Prompt Al
                     </button>
                 </div>

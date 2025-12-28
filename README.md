@@ -71,18 +71,25 @@ npm start
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key
-GITHUB_CLIENT_ID=your_github_oauth_client_id
-GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
 SESSION_SECRET=your_random_session_secret
 ```
 
 These values are collected in the **API Settings** modal on first visit and sent to the backend via headers/query. `.env` is no longer required for these keys.
 
+### Backend OAuth Secrets
+
+Set these on the backend (Worker/Node environment), not in the frontend:
+
+```env
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+```
+
 ### GitHub Pages (Frontend + Remote Backend)
 
 RepoJudge can run on GitHub Pages as a static frontend that talks to a separately hosted backend.
 
-1. Deploy the Node/Redis backend (same codebase).
+1. Deploy the Node backend (same codebase).
 2. Build the static frontend:
    ```bash
    npm run build
@@ -92,7 +99,6 @@ RepoJudge can run on GitHub Pages as a static frontend that talks to a separatel
 3. Configure GitHub Pages to serve the `/docs` folder.
 4. Open `dashboard.html` and set:
    - Gemini API key
-   - GitHub Client ID / Secret
    - Session secret
 
 On first visit the site prompts for these values. If localStorage is available, they are stored on the client device.
@@ -109,22 +115,30 @@ You can run the backend on Cloudflare Workers and keep the GitHub Pages frontend
    wrangler kv:namespace create repojudge_cache
    ```
 2. Update `wrangler.toml` with the KV IDs for `SESSIONS` and `CACHE`.
-3. Deploy the worker:
+3. Set Worker secrets (recommended):
+   ```bash
+   wrangler secret put GITHUB_CLIENT_ID
+   wrangler secret put GITHUB_CLIENT_SECRET
+   # Optional (if you don't want to enter them in the frontend)
+   wrangler secret put GEMINI_API_KEY
+   wrangler secret put SESSION_SECRET
+   ```
+4. Deploy the worker:
    ```bash
    wrangler deploy
    ```
-4. Point the frontend to the worker origin by setting:
+5. Point the frontend to the worker origin by setting:
    ```html
    <script>
      window.__API_BASE__ = 'https://your-worker.yourdomain.workers.dev';
    </script>
    ```
-5. Update your GitHub OAuth App callback URL to:
+6. Update your GitHub OAuth App callback URL to:
    ```
    https://your-worker.yourdomain.workers.dev/auth/github/callback
    ```
 
-The frontend still asks for `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GEMINI_API_KEY`, and `SESSION_SECRET` on first visit.
+The frontend asks for `GEMINI_API_KEY` and `SESSION_SECRET` on first visit. GitHub OAuth uses backend secrets.
 
 ## 🔧 GitHub OAuth Setup
 
@@ -134,7 +148,7 @@ The frontend still asks for `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GEMINI_
    - **Application name:** RepoJudge
    - **Homepage URL:** http://localhost:3000
    - **Authorization callback URL:** http://localhost:3000/auth/github/callback
-4. Enter Client ID and Client Secret in the API Settings modal on the frontend
+4. Configure Client ID and Client Secret on the backend (Worker/Node environment)
 
 ## 📦 Tech Stack
 

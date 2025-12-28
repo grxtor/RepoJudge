@@ -1076,8 +1076,11 @@ function renderIssues() {
 }
 
 function renderRecommendationCard(rec) {
-    const title = getText(rec.title);
-    const desc = getText(rec.description);
+    const isString = typeof rec === 'string';
+    const title = isString ? rec : (getText(rec.title) || getText(rec));
+    const desc = isString ? '' : (getText(rec.description) || '');
+    const priority = rec?.priority || rec?.severity || 'medium';
+    const category = rec?.category || 'general';
     const priorityColors = {
         high: 'var(--danger)',
         medium: 'var(--warning)',
@@ -1090,18 +1093,21 @@ function renderRecommendationCard(rec) {
         ci_cd: 'bx-git-branch',
         performance: 'bx-rocket'
     };
+    const priorityColor = priorityColors[priority] || 'var(--text-muted)';
+    const safeTitle = title || 'Recommendation';
+    const safeDesc = desc || 'No additional details provided.';
 
     return `
         <div class="recommendation-card">
             <div class="rec-icon">
-                <i class='bx ${categoryIcons[rec.category] || 'bx-bulb'}'></i>
+                <i class='bx ${categoryIcons[category] || 'bx-bulb'}'></i>
             </div>
             <div class="rec-content">
-                <h4>${title}</h4>
-                <p>${desc}</p>
+                <h4>${safeTitle}</h4>
+                <p>${safeDesc}</p>
                 <div class="rec-meta">
-                    <span class="rec-priority" style="color: ${priorityColors[rec.priority]}">${rec.priority}</span>
-                    <button class="rec-prompt-btn" data-title="${encodeURIComponent(title)}" data-desc="${encodeURIComponent(desc)}">
+                    <span class="rec-priority" style="color: ${priorityColor}">${priority}</span>
+                    <button class="rec-prompt-btn" data-title="${encodeURIComponent(safeTitle)}" data-desc="${encodeURIComponent(safeDesc)}">
                         <i class='bx bx-copy'></i> Prompt Al
                     </button>
                 </div>
